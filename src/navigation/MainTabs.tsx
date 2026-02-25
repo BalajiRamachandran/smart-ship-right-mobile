@@ -1,11 +1,12 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { ClipboardList, Package, Move } from 'lucide-react-native';
+import { ClipboardList, Package, Move, Settings } from 'lucide-react-native';
 
 import type { MainTabParamList } from './types';
 import OrdersListScreen from '../screens/Orders/OrdersListScreen';
 import MoveSkuStack from './MoveSkuStack';
 import PickingStack from './PickingStack';
+import SettingsScreen from '../screens/SettingsScreen';
 import { theme } from '../theme';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
@@ -59,6 +60,14 @@ const MainTabs: React.FC = () => {
           title: 'Picking',
           tabBarIcon: ({ focused }) => tabIcon(Package, focused),
           headerShown: false,
+        }}
+      />
+      <Tab.Screen
+        name="Settings"
+        component={SettingsScreen}
+        options={{
+          title: 'Settings',
+          tabBarIcon: ({ focused }) => tabIcon(Settings, focused),
         }}
       />
     </Tab.Navigator>

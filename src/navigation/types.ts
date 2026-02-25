@@ -7,6 +7,7 @@ export type MainTabParamList = {
   Orders: undefined;
   MoveSku: undefined;
   Picking: undefined;
+  Settings: undefined;
 };
 
 /** Params for MoveSku tab stack (inner screens; tab name stays "MoveSku") */

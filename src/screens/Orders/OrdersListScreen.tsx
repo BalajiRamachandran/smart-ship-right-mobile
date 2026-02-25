@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import { Filter, ArrowDown, ArrowUp } from 'lucide-react-native';
 import { MainTabParamList } from '../../navigation/types';
@@ -57,7 +58,12 @@ type PaginatedOrders = {
 
 const PAGE_SIZE = 20;
 
+const TAB_BAR_PADDING = 16;
+
 const OrdersListScreen: React.FC<Props> = ({ navigation }) => {
+  const tabBarHeight = useBottomTabBarHeight();
+  const listBottomPadding = (tabBarHeight || 58) + TAB_BAR_PADDING;
+
   const [orders, setOrders] = useState<Order[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -268,7 +274,11 @@ const OrdersListScreen: React.FC<Props> = ({ navigation }) => {
       <FlatList
         data={orders}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={[styles.listContent, orders.length === 0 && styles.emptyContainer]}
+        contentContainerStyle={[
+          styles.listContent,
+          { paddingBottom: listBottomPadding },
+          orders.length === 0 && styles.emptyContainer,
+        ]}
         renderItem={renderItem}
         onEndReached={loadMore}
         onEndReachedThreshold={0.4}
