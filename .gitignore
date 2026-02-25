@@ -1,42 +1,136 @@
-# Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
+# Learn more: https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
 
-# dependencies
+# —— Dependencies ——
 node_modules/
+.pnp
+.pnp.js
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+.pnpm-store
 
-# Expo
+# —— Expo ——
 .expo/
 dist/
 web-build/
 expo-env.d.ts
+*.expo.*
 
-# Native
+# —— Native (prebuild output) ——
+# Uncomment if you commit native projects; otherwise keep ignored when using managed workflow
+/ios/
+/android/
+*.xcworkspace
+!*.xcworkspace/contents.xcworkspacedata
+*.pbxuser
+!default.pbxuser
+*.mode1v3
+!default.mode1v3
+*.mode2v3
+!default.mode2v3
+*.perspectivev3
+!default.perspectivev3
+xcuserdata/
+*.xccheckout
+*.moved-aside
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# —— Android ——
+*.iml
+.gradle/
+build/
+local.properties
+*.apk
+*.aab
+*.dex
+.cxx/
+*.keystore
+!debug.keystore
 .kotlin/
 *.orig.*
-*.jks
-*.p8
-*.p12
-*.key
+
+# —— iOS ——
 *.mobileprovision
+*.p12
+*.p8
+*.key
+*.cer
+Pods/
+*.xcuserstate
+*.xcscmblueprint
 
-# Metro
+# —— Metro / React Native ——
 .metro-health-check*
+*.bundle
+*.bundle.*
 
-# debug
-npm-debug.*
-yarn-debug.*
-yarn-error.*
-
-# macOS
-.DS_Store
+# —— Environment & secrets ——
+.env
+.env.local
+.env.*.local
+.env.development.local
+.env.test.local
+.env.production.local
 *.pem
 
-# local env files
-.env
-.env*.local
+# —— Build & output ——
+*.tsbuildinfo
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+out/
+.next/
+.nuxt/
+.cache/
 
-# typescript
+# —— Testing & coverage ——
+coverage/
+.nyc_output/
+*.lcov
+.jest/
+
+# —— EAS (Expo Application Services) ——
+.easignore
+# Optional: keep eas.json committed; ignore local EAS secrets if any
+# .eas-secrets
+
+# —— TypeScript ——
 *.tsbuildinfo
 
-# generated native folders
-/ios
-/android
+# —— IDE & editors ——
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+!.vscode/launch.json
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+
+# —— OS ——
+.DS_Store
+.DS_Store?
+.AppleDouble
+.LSOverride
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# —— Misc ——
+*.log
+*.tmp
+*.temp
+.temp
+.tmp
+*.bak
+*.backup
