@@ -7,10 +7,10 @@ import {
 } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { MoveSkuStackParamList, PickingStackParamList } from '../navigation/types';
+import type { AdjustStackParamList, MoveSkuStackParamList, PickingStackParamList } from '../navigation/types';
 import { theme } from '../theme';
 
-type Props = NativeStackScreenProps<MoveSkuStackParamList | PickingStackParamList, 'Scanner'>;
+type Props = NativeStackScreenProps<MoveSkuStackParamList | PickingStackParamList | AdjustStackParamList, 'Scanner'>;
 
 const BarcodeScannerScreen: React.FC<Props> = ({ navigation, route }) => {
   const [permission, requestPermission] = useCameraPermissions();

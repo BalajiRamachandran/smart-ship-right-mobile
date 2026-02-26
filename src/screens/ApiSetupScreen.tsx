@@ -10,9 +10,12 @@ import {
   View,
 } from 'react-native';
 import { useApiUrlStore } from '../store/apiUrlStore';
+import { useLayout } from '../hooks/useLayout';
+import { GlassView } from '../components/GlassView';
 import { theme } from '../theme';
 
 const ApiSetupScreen: React.FC = () => {
+  const { contentWidth, horizontalPadding } = useLayout();
   const getEffectiveUrl = useApiUrlStore((s) => s.getEffectiveUrl);
   const setApiUrl = useApiUrlStore((s) => s.setApiUrl);
 
@@ -46,7 +49,7 @@ const ApiSetupScreen: React.FC = () => {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <View style={styles.card}>
+      <GlassView style={[styles.card, { maxWidth: contentWidth, marginHorizontal: horizontalPadding }]}>
         <View style={styles.brand}>
           <Text style={styles.title}>Backend API</Text>
           <Text style={styles.subtitle}>
@@ -89,7 +92,7 @@ const ApiSetupScreen: React.FC = () => {
             <Text style={styles.buttonText}>Save & Continue</Text>
           )}
         </TouchableOpacity>
-      </View>
+      </GlassView>
     </KeyboardAvoidingView>
   );
 };
@@ -100,17 +103,11 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.background,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: theme.spacing.xxl,
   },
   card: {
     width: '100%',
-    maxWidth: 400,
     paddingHorizontal: theme.spacing.xxl,
     paddingVertical: theme.spacing.xxl + theme.spacing.md,
-    borderRadius: theme.radius.xl,
-    backgroundColor: theme.colors.backgroundCard,
-    borderWidth: 1,
-    borderColor: theme.colors.borderStrong,
     ...theme.shadow.card,
   },
   brand: {

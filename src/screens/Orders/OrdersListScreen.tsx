@@ -2,16 +2,20 @@ import React, { useLayoutEffect, useEffect, useRef, useState, useCallback } from
 import {
   ActivityIndicator,
   FlatList,
+  Modal,
+  Pressable,
   RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
-import { Filter, ArrowDown, ArrowUp } from 'lucide-react-native';
+import { Filter, ArrowDown, ArrowUp, X } from 'lucide-react-native';
+import { useLayout } from '../../hooks/useLayout';
 import { MainTabParamList } from '../../navigation/types';
 import { api } from '../../api/client';
 import { useAuthStore } from '../../store/authStore';
@@ -60,9 +64,15 @@ const PAGE_SIZE = 20;
 
 const TAB_BAR_PADDING = 16;
 
+const SIDEBAR_WIDTH_PERCENT = 0.85;
+const SIDEBAR_MAX_WIDTH = 360;
+
 const OrdersListScreen: React.FC<Props> = ({ navigation }) => {
+  const { width: windowWidth } = useWindowDimensions();
   const tabBarHeight = useBottomTabBarHeight();
+  const { horizontalPadding } = useLayout();
   const listBottomPadding = (tabBarHeight || 58) + TAB_BAR_PADDING;
+  const sidebarWidth = Math.min(windowWidth * SIDEBAR_WIDTH_PERCENT, SIDEBAR_MAX_WIDTH);
 
   const [orders, setOrders] = useState<Order[]>([]);
   const [total, setTotal] = useState(0);
@@ -209,7 +219,7 @@ const OrdersListScreen: React.FC<Props> = ({ navigation }) => {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingHorizontal: horizontalPadding }]}>
       <TouchableOpacity
         style={styles.filterBar}
         onPress={() => setShowFilters((v) => !v)}
@@ -224,46 +234,69 @@ const OrdersListScreen: React.FC<Props> = ({ navigation }) => {
         <Text style={styles.filterBarHint}>{showFilters ? 'Tap to close' : 'Tap to filter'}</Text>
       </TouchableOpacity>
 
-      {showFilters ? (
-        <View style={styles.filterPanel}>
-          <Text style={styles.filterSectionLabel}>Status</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterChips}>
-            {STATUS_OPTIONS.map((opt) => (
-              <TouchableOpacity
-                key={opt.value || 'all'}
-                style={[styles.filterChip, (!opt.value && !statusFilter) || statusFilter === opt.value ? styles.filterChipActive : null]}
-                onPress={() => {
-                  setStatusFilter(opt.value);
-                  setShowFilters(false);
-                }}
-              >
-                <Text style={[styles.filterChipText, (!opt.value && !statusFilter) || statusFilter === opt.value ? styles.filterChipTextActive : null]}>
-                  {opt.label}
-                </Text>
+      <Modal
+        visible={showFilters}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowFilters(false)}
+      >
+        <View style={styles.sidebarOverlay}>
+          <Pressable style={styles.sidebarBackdrop} onPress={() => setShowFilters(false)} />
+          <View style={[styles.sidebar, { width: sidebarWidth }]}>
+            <View style={styles.sidebarHeader}>
+              <Text style={styles.sidebarTitle}>Filters</Text>
+              <TouchableOpacity onPress={() => setShowFilters(false)} hitSlop={12} style={styles.sidebarCloseBtn}>
+                <X size={24} color={theme.colors.textSecondary} strokeWidth={2} />
               </TouchableOpacity>
-            ))}
-          </ScrollView>
-          <Text style={styles.filterSectionLabel}>Sort by</Text>
-          <View style={styles.sortRow}>
-            {SORT_OPTIONS.map((opt) => (
-              <TouchableOpacity
-                key={`${opt.value}-${opt.order}`}
-                style={[styles.sortChip, sortBy === opt.value && sortOrder === opt.order ? styles.sortChipActive : null]}
-                onPress={() => applySort(opt.value, opt.order)}
-              >
-                {opt.order === 'desc' ? (
-                  <ArrowDown size={14} color={sortBy === opt.value && sortOrder === opt.order ? '#fff' : theme.colors.textSecondary} />
-                ) : (
-                  <ArrowUp size={14} color={sortBy === opt.value && sortOrder === opt.order ? '#fff' : theme.colors.textSecondary} />
-                )}
-                <Text style={[styles.sortChipText, sortBy === opt.value && sortOrder === opt.order ? styles.sortChipTextActive : null]}>
-                  {opt.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
+            </View>
+            <ScrollView style={styles.sidebarScroll} showsVerticalScrollIndicator={false}>
+              <Text style={styles.filterSectionLabel}>Status</Text>
+              <View style={styles.sidebarOptionList}>
+                {STATUS_OPTIONS.map((opt) => {
+                  const isActive = (!opt.value && !statusFilter) || statusFilter === opt.value;
+                  return (
+                    <TouchableOpacity
+                      key={opt.value || 'all'}
+                      style={[styles.sidebarOption, isActive && styles.sidebarOptionActive]}
+                      onPress={() => {
+                        setStatusFilter(opt.value);
+                        setShowFilters(false);
+                      }}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={[styles.sidebarOptionText, isActive && styles.sidebarOptionTextActive]}>{opt.label}</Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+              <Text style={[styles.filterSectionLabel, { marginTop: theme.spacing.xl }]}>Sort by</Text>
+              <View style={styles.sidebarOptionList}>
+                {SORT_OPTIONS.map((opt) => {
+                  const isActive = sortBy === opt.value && sortOrder === opt.order;
+                  return (
+                    <TouchableOpacity
+                      key={`${opt.value}-${opt.order}`}
+                      style={[styles.sidebarOption, styles.sidebarOptionRow, isActive && styles.sidebarOptionActive]}
+                      onPress={() => {
+                        applySort(opt.value, opt.order);
+                        setShowFilters(false);
+                      }}
+                      activeOpacity={0.7}
+                    >
+                      {opt.order === 'desc' ? (
+                        <ArrowDown size={18} color={isActive ? '#fff' : theme.colors.textSecondary} strokeWidth={2} />
+                      ) : (
+                        <ArrowUp size={18} color={isActive ? '#fff' : theme.colors.textSecondary} strokeWidth={2} />
+                      )}
+                      <Text style={[styles.sidebarOptionText, isActive && styles.sidebarOptionTextActive]}>{opt.label}</Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </ScrollView>
           </View>
         </View>
-      ) : null}
+      </Modal>
 
       {error ? (
         <View style={styles.errorBanner}>
@@ -321,7 +354,6 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.background,
   },
   listContent: {
-    paddingHorizontal: theme.spacing.lg,
     paddingTop: theme.spacing.md,
     paddingBottom: theme.spacing.xxl,
   },
@@ -454,12 +486,70 @@ const styles = StyleSheet.create({
     ...theme.typography.caption,
     color: theme.colors.textMuted,
   },
-  filterPanel: {
-    paddingVertical: theme.spacing.md,
+  sidebarOverlay: {
+    flex: 1,
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+  },
+  sidebarBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+  },
+  sidebar: {
+    flex: 0,
+    backgroundColor: theme.colors.backgroundElevated,
+    borderLeftWidth: 1,
+    borderLeftColor: theme.colors.border,
+    maxHeight: '100%',
+  },
+  sidebarHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: theme.spacing.lg,
+    paddingVertical: theme.spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: theme.colors.border,
-    backgroundColor: theme.colors.backgroundElevated,
+  },
+  sidebarTitle: {
+    ...theme.typography.titleSmall,
+    color: theme.colors.text,
+  },
+  sidebarCloseBtn: {
+    padding: theme.spacing.xs,
+  },
+  sidebarScroll: {
+    flex: 1,
+    paddingHorizontal: theme.spacing.lg,
+    paddingVertical: theme.spacing.md,
+  },
+  sidebarOptionList: {
+    gap: theme.spacing.xs,
+  },
+  sidebarOption: {
+    paddingVertical: theme.spacing.md,
+    paddingHorizontal: theme.spacing.md,
+    borderRadius: theme.radius.md,
+    backgroundColor: theme.colors.background,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  sidebarOptionActive: {
+    borderColor: theme.colors.primary,
+    backgroundColor: theme.colors.primaryDim,
+  },
+  sidebarOptionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.sm,
+  },
+  sidebarOptionText: {
+    ...theme.typography.body,
+    color: theme.colors.textSecondary,
+  },
+  sidebarOptionTextActive: {
+    color: theme.colors.primary,
+    fontWeight: '600',
   },
   filterSectionLabel: {
     ...theme.typography.caption,
@@ -468,6 +558,9 @@ const styles = StyleSheet.create({
   },
   filterChips: {
     marginBottom: theme.spacing.md,
+  },
+  filterChipsContent: {
+    paddingRight: theme.spacing.xl,
   },
   filterChip: {
     paddingVertical: theme.spacing.sm,
@@ -490,10 +583,10 @@ const styles = StyleSheet.create({
     color: theme.colors.primary,
     fontWeight: '600',
   },
-  sortRow: {
+  sortRowContent: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
     gap: theme.spacing.sm,
+    paddingRight: theme.spacing.xl,
   },
   sortChip: {
     flexDirection: 'row',

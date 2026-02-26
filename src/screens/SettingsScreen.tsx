@@ -11,9 +11,12 @@ import {
 import { Settings, LogOut } from 'lucide-react-native';
 import { useApiUrlStore } from '../store/apiUrlStore';
 import { useAuthStore } from '../store/authStore';
+import { useLayout } from '../hooks/useLayout';
+import { GlassView } from '../components/GlassView';
 import { theme } from '../theme';
 
 const SettingsScreen: React.FC = () => {
+  const { contentWidth, horizontalPadding } = useLayout();
   const getEffectiveUrl = useApiUrlStore((s) => s.getEffectiveUrl);
   const setApiUrl = useApiUrlStore((s) => s.setApiUrl);
   const logout = useAuthStore((s) => s.logout);
@@ -47,8 +50,8 @@ const SettingsScreen: React.FC = () => {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-      <View style={styles.section}>
+    <ScrollView style={styles.container} contentContainerStyle={[styles.content, { paddingHorizontal: horizontalPadding }]} keyboardShouldPersistTaps="handled">
+      <GlassView style={[styles.section, { maxWidth: contentWidth }]}>
         <View style={styles.sectionHeader}>
           <Settings size={20} color={theme.colors.primary} strokeWidth={2} />
           <Text style={styles.sectionTitle}>Backend API</Text>
@@ -75,9 +78,9 @@ const SettingsScreen: React.FC = () => {
         >
           {saving ? <ActivityIndicator color="#fff" size="small" /> : <Text style={styles.primaryButtonText}>Save API URL</Text>}
         </TouchableOpacity>
-      </View>
+      </GlassView>
 
-      <View style={styles.section}>
+      <GlassView style={[styles.section, { maxWidth: contentWidth }]}>
         <View style={styles.sectionHeader}>
           <LogOut size={20} color={theme.colors.textSecondary} strokeWidth={2} />
           <Text style={styles.sectionTitle}>Account</Text>
@@ -85,7 +88,7 @@ const SettingsScreen: React.FC = () => {
         <TouchableOpacity style={styles.logoutButton} onPress={() => logout()} activeOpacity={0.85}>
           <Text style={styles.logoutButtonText}>Sign out</Text>
         </TouchableOpacity>
-      </View>
+      </GlassView>
     </ScrollView>
   );
 };
@@ -102,10 +105,6 @@ const styles = StyleSheet.create({
   section: {
     marginBottom: theme.spacing.xxl,
     padding: theme.spacing.lg,
-    borderRadius: theme.radius.xl,
-    backgroundColor: theme.colors.backgroundCard,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
   },
   sectionHeader: {
     flexDirection: 'row',

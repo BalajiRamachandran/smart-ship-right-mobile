@@ -10,9 +10,12 @@ import {
   View,
 } from 'react-native';
 import { useAuthStore } from '../store/authStore';
+import { useLayout } from '../hooks/useLayout';
+import { GlassView } from '../components/GlassView';
 import { theme } from '../theme';
 
 const LoginScreen: React.FC = () => {
+  const { contentWidth, horizontalPadding } = useLayout();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
 
@@ -30,7 +33,7 @@ const LoginScreen: React.FC = () => {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <View style={styles.card}>
+      <GlassView style={[styles.card, { maxWidth: contentWidth, marginHorizontal: horizontalPadding }]}>
         <View style={styles.brand}>
           <Text style={styles.title}>Smart-Ship-Right</Text>
           <Text style={styles.subtitle}>Warehouse Management</Text>
@@ -89,7 +92,7 @@ const LoginScreen: React.FC = () => {
         <Text style={styles.hint}>
           Use your existing Ship-Right credentials
         </Text>
-      </View>
+      </GlassView>
     </KeyboardAvoidingView>
   );
 };
@@ -100,17 +103,11 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.background,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: theme.spacing.xxl,
   },
   card: {
     width: '100%',
-    maxWidth: 400,
     paddingHorizontal: theme.spacing.xxl,
     paddingVertical: theme.spacing.xxl + theme.spacing.md,
-    borderRadius: theme.radius.xl,
-    backgroundColor: theme.colors.backgroundCard,
-    borderWidth: 1,
-    borderColor: theme.colors.borderStrong,
     ...theme.shadow.card,
   },
   brand: {

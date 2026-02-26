@@ -7,7 +7,15 @@ export type MainTabParamList = {
   Orders: undefined;
   MoveSku: undefined;
   Picking: undefined;
+  Adjust: undefined;
   Settings: undefined;
+};
+
+/** Params for Adjust tab stack */
+export type AdjustStackParamList = {
+  AdjustRoot: { scannedField?: string; scannedValue?: string } | undefined;
+  Scanner: { returnTo: 'AdjustRoot'; field: string; title?: string };
+  AdjustInventory: { skuId: string };
 };
 
 /** Params for MoveSku tab stack (inner screens; tab name stays "MoveSku") */
