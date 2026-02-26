@@ -1,6 +1,7 @@
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Platform, StyleSheet, View } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import Constants from 'expo-constants';
 import { BlurView } from 'expo-blur';
 import { ClipboardList, Package, Move, SlidersHorizontal, Settings } from 'lucide-react-native';
 
@@ -14,14 +15,17 @@ import { theme } from '../theme';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
+/** In Expo Go, BlurView causes "Unable to get the view config for ExpoBlurView". Use solid background there. */
+const useTabBarBlur = (Platform.OS === 'ios' || Platform.OS === 'android') && Constants.appOwnership !== 'expo';
+
 function TabBarGlassBackground() {
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="none">
-      <BlurView
-        intensity={70}
-        tint="dark"
-        style={StyleSheet.absoluteFill}
-      />
+      {useTabBarBlur ? (
+        <BlurView intensity={70} tint="dark" style={StyleSheet.absoluteFill} />
+      ) : (
+        <View style={[StyleSheet.absoluteFill, { backgroundColor: theme.colors.backgroundCard }]} />
+      )}
       <View
         style={[
           StyleSheet.absoluteFill,

@@ -21,7 +21,7 @@ export const theme = {
     error: '#ef4444',
     errorDim: 'rgba(239, 68, 68, 0.15)',
     tabActive: '#3b82f6',
-    tabInactive: '#64748b',
+    tabInactive: '#94a3b8',
   },
   spacing: {
     xs: 4,

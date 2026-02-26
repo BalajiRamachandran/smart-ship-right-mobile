@@ -7,6 +7,7 @@ type SkuSnapshot = {
   sku_code: string;
   name: string;
   barcode?: string | null;
+  primary_image_url?: string | null;
 } | null;
 
 type MoveSkuPersistState = {

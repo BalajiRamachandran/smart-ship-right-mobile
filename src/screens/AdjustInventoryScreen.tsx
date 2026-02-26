@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
+  Image,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -24,6 +25,8 @@ type SkuInfo = {
   sku_code: string;
   name: string;
   inventory_quantity?: number | null;
+  primary_image_url?: string | null;
+  image_urls?: string[];
 };
 
 type LocationsResponse = {
@@ -42,6 +45,8 @@ const AdjustInventoryScreen: React.FC<Props> = ({ navigation, route }) => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [shopifySynced, setShopifySynced] = useState<boolean | null>(null);
+  const [shopifyError, setShopifyError] = useState<string | null>(null);
 
   const loadSku = useCallback(async () => {
     setLoading(true);
@@ -59,11 +64,22 @@ const AdjustInventoryScreen: React.FC<Props> = ({ navigation, route }) => {
         throw new Error('SKU not found');
       }
       const qty = skuData.inventory_quantity ?? locRes.data?.total_quantity ?? 0;
+      let imageUrls: string[] = [];
+      if (Array.isArray(skuData.image_urls)) imageUrls = skuData.image_urls;
+      else if (typeof skuData.additional_images === 'string') {
+        try {
+          const parsed = JSON.parse(skuData.additional_images);
+          if (Array.isArray(parsed)) imageUrls = parsed;
+        } catch {}
+      }
+      const primaryImage = skuData.primary_image_url || imageUrls[0] || null;
       setSku({
         id: skuData.id,
         sku_code: skuData.sku_code,
         name: skuData.name ?? '',
         inventory_quantity: skuData.inventory_quantity,
+        primary_image_url: primaryImage,
+        image_urls: imageUrls,
       });
       setCurrentQuantity(Number(qty) || 0);
       setNewQuantity(String(Number(qty) || 0));
@@ -91,12 +107,17 @@ const AdjustInventoryScreen: React.FC<Props> = ({ navigation, route }) => {
       return;
     }
     setError(null);
+    setShopifySynced(null);
+    setShopifyError(null);
     setSaving(true);
     try {
-      await api.post(`/api/inventory/skus/${encodeURIComponent(skuId)}/adjust-inventory`, {
-        new_quantity: qty,
-        reason: reason.trim(),
-      });
+      const res = await api.post<{ success?: boolean; data?: { shopify_synced?: boolean; shopify_error?: string } }>(
+        `/api/inventory/skus/${encodeURIComponent(skuId)}/adjust-inventory`,
+        { new_quantity: qty, reason: reason.trim() }
+      );
+      const data = (res.data as any)?.data;
+      setShopifySynced(data?.shopify_synced ?? null);
+      setShopifyError(data?.shopify_error ?? null);
       setSuccess(true);
     } catch (e: any) {
       const formatted = formatApiError(e);
@@ -106,9 +127,16 @@ const AdjustInventoryScreen: React.FC<Props> = ({ navigation, route }) => {
     }
   };
 
+  const revertToCurrent = () => {
+    setNewQuantity(String(currentQuantity));
+    setError(null);
+  };
+
   const adjustAnother = () => {
     setSuccess(false);
     setReason('');
+    setShopifySynced(null);
+    setShopifyError(null);
     navigation.navigate('AdjustRoot');
   };
 
@@ -136,15 +164,25 @@ const AdjustInventoryScreen: React.FC<Props> = ({ navigation, route }) => {
   }
 
   if (success && sku) {
+    const syncMessage = shopifySynced === true
+      ? ' Synced to Shopify.'
+      : shopifySynced === false && shopifyError
+        ? ` Shopify sync failed: ${shopifyError}`
+        : shopifySynced === false
+          ? ' Shopify sync failed.'
+          : '';
     return (
       <ScrollView style={styles.container} contentContainerStyle={styles.successContent} keyboardShouldPersistTaps="handled">
         <View style={styles.successCard}>
+          {sku.primary_image_url ? (
+            <Image source={{ uri: sku.primary_image_url }} style={styles.successSkuImage} resizeMode="cover" />
+          ) : null}
           <View style={styles.successIconWrap}>
             <CheckCircle size={56} color={theme.colors.success} strokeWidth={2} />
           </View>
           <Text style={styles.successTitle}>Inventory updated</Text>
           <Text style={styles.successSubtitle}>
-            {sku.sku_code} is now set to {newQuantity} units.
+            {sku.sku_code} is now set to {newQuantity} units.{syncMessage}
           </Text>
           <TouchableOpacity style={styles.primaryButton} onPress={adjustAnother} activeOpacity={0.85}>
             <RotateCcw size={20} color="#fff" strokeWidth={2} style={{ marginRight: 8 }} />
@@ -161,7 +199,17 @@ const AdjustInventoryScreen: React.FC<Props> = ({ navigation, route }) => {
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={80}>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
         <View style={styles.skuCard}>
-          <Package size={24} color={theme.colors.primary} strokeWidth={2} />
+          {sku.primary_image_url ? (
+            <Image
+              source={{ uri: sku.primary_image_url }}
+              style={styles.skuImage}
+              resizeMode="cover"
+            />
+          ) : (
+            <View style={styles.skuImagePlaceholder}>
+              <Package size={28} color={theme.colors.textMuted} strokeWidth={2} />
+            </View>
+          )}
           <View style={styles.skuInfo}>
             <Text style={styles.skuCode}>{sku.sku_code}</Text>
             <Text style={styles.skuName} numberOfLines={2}>{sku.name}</Text>
@@ -177,15 +225,28 @@ const AdjustInventoryScreen: React.FC<Props> = ({ navigation, route }) => {
 
         <View style={styles.fieldGroup}>
           <Text style={styles.label}>New quantity *</Text>
-          <TextInput
-            style={styles.input}
-            value={newQuantity}
-            onChangeText={(t) => { setNewQuantity(t); setError(null); }}
-            keyboardType="number-pad"
-            placeholder="0"
-            placeholderTextColor={theme.colors.textMuted}
-            editable={!saving}
-          />
+          <View style={styles.newQtyRow}>
+            <TextInput
+              style={styles.inputFlex}
+              value={newQuantity}
+              onChangeText={(t) => { setNewQuantity(t); setError(null); }}
+              keyboardType="number-pad"
+              placeholder="0"
+              placeholderTextColor={theme.colors.textMuted}
+              editable={!saving}
+            />
+            {showDiff ? (
+              <TouchableOpacity
+                onPress={revertToCurrent}
+                disabled={saving}
+                style={styles.revertButton}
+                activeOpacity={0.8}
+              >
+                <RotateCcw size={18} color={theme.colors.primary} strokeWidth={2} />
+                <Text style={styles.revertButtonText}>Revert</Text>
+              </TouchableOpacity>
+            ) : null}
+          </View>
           {showDiff && (
             <Text style={[styles.diffText, difference > 0 ? styles.diffPlus : styles.diffMinus]}>
               {difference > 0 ? '+' : ''}{difference} units
@@ -248,6 +309,20 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.border,
     marginBottom: theme.spacing.xl,
   },
+  skuImage: {
+    width: 56,
+    height: 56,
+    borderRadius: theme.radius.md,
+    backgroundColor: theme.colors.background,
+  },
+  skuImagePlaceholder: {
+    width: 56,
+    height: 56,
+    borderRadius: theme.radius.md,
+    backgroundColor: theme.colors.backgroundElevated,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   skuInfo: { flex: 1, marginLeft: theme.spacing.md },
   skuCode: { ...theme.typography.label, fontSize: 16, color: theme.colors.text },
   skuName: { ...theme.typography.bodySmall, color: theme.colors.textSecondary, marginTop: 2 },
@@ -255,6 +330,29 @@ const styles = StyleSheet.create({
   label: { ...theme.typography.label, color: theme.colors.text, marginBottom: theme.spacing.sm },
   currentQtyWrap: { padding: theme.spacing.md, borderRadius: theme.radius.md, backgroundColor: theme.colors.backgroundElevated, borderWidth: 1, borderColor: theme.colors.border },
   currentQty: { fontSize: 18, fontWeight: '700', color: theme.colors.text },
+  newQtyRow: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.sm },
+  inputFlex: {
+    flex: 1,
+    height: 48,
+    borderRadius: theme.radius.md,
+    borderWidth: 1,
+    borderColor: theme.colors.borderStrong,
+    paddingHorizontal: theme.spacing.md,
+    color: theme.colors.text,
+    backgroundColor: theme.colors.background,
+    fontSize: 16,
+  },
+  revertButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingVertical: theme.spacing.sm,
+    paddingHorizontal: theme.spacing.md,
+    borderRadius: theme.radius.md,
+    borderWidth: 1,
+    borderColor: theme.colors.primary,
+  },
+  revertButtonText: { fontSize: 14, fontWeight: '600', color: theme.colors.primary },
   input: {
     height: 48,
     borderRadius: theme.radius.md,
@@ -283,6 +381,7 @@ const styles = StyleSheet.create({
   buttonDisabled: { opacity: 0.6 },
   successContent: { flexGrow: 1, justifyContent: 'center', padding: theme.spacing.xl },
   successCard: { alignItems: 'center', padding: theme.spacing.xxl },
+  successSkuImage: { width: 64, height: 64, borderRadius: theme.radius.lg, marginBottom: theme.spacing.md },
   successIconWrap: { marginBottom: theme.spacing.lg },
   successTitle: { ...theme.typography.title, color: theme.colors.text, marginBottom: theme.spacing.xs },
   successSubtitle: { ...theme.typography.bodySmall, color: theme.colors.textSecondary, marginBottom: theme.spacing.xl, textAlign: 'center' },

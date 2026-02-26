@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "smart-ship-right-mobile",
+    "name": "SmartShipRight",
     "slug": "smart-ship-right",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -14,7 +14,10 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.bramkas.smartshipright"
+      "bundleIdentifier": "com.bramkas.smartshipright",
+      "config": {
+        "usesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {

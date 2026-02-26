@@ -16,7 +16,7 @@ import { GlassView } from '../components/GlassView';
 import { theme } from '../theme';
 
 const SettingsScreen: React.FC = () => {
-  const { contentWidth, horizontalPadding } = useLayout();
+  const { horizontalPadding } = useLayout();
   const getEffectiveUrl = useApiUrlStore((s) => s.getEffectiveUrl);
   const setApiUrl = useApiUrlStore((s) => s.setApiUrl);
   const logout = useAuthStore((s) => s.logout);
@@ -51,7 +51,7 @@ const SettingsScreen: React.FC = () => {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={[styles.content, { paddingHorizontal: horizontalPadding }]} keyboardShouldPersistTaps="handled">
-      <GlassView style={[styles.section, { maxWidth: contentWidth }]}>
+      <GlassView style={[styles.section, styles.sectionFullWidth]}>
         <View style={styles.sectionHeader}>
           <Settings size={20} color={theme.colors.primary} strokeWidth={2} />
           <Text style={styles.sectionTitle}>Backend API</Text>
@@ -80,9 +80,9 @@ const SettingsScreen: React.FC = () => {
         </TouchableOpacity>
       </GlassView>
 
-      <GlassView style={[styles.section, { maxWidth: contentWidth }]}>
+      <GlassView style={[styles.section, styles.sectionFullWidth]}>
         <View style={styles.sectionHeader}>
-          <LogOut size={20} color={theme.colors.textSecondary} strokeWidth={2} />
+          <LogOut size={20} color={theme.colors.text} strokeWidth={2} />
           <Text style={styles.sectionTitle}>Account</Text>
         </View>
         <TouchableOpacity style={styles.logoutButton} onPress={() => logout()} activeOpacity={0.85}>
@@ -106,6 +106,9 @@ const styles = StyleSheet.create({
     marginBottom: theme.spacing.xxl,
     padding: theme.spacing.lg,
   },
+  sectionFullWidth: {
+    width: '100%',
+  },
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -118,7 +121,8 @@ const styles = StyleSheet.create({
   },
   sectionDescription: {
     ...theme.typography.bodySmall,
-    color: theme.colors.textSecondary,
+    color: theme.colors.text,
+    opacity: 0.9,
     marginBottom: theme.spacing.md,
     lineHeight: 20,
   },
@@ -165,9 +169,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderWidth: 1.5,
     borderColor: theme.colors.borderStrong,
+    backgroundColor: theme.colors.backgroundElevated,
   },
   logoutButtonText: {
-    color: theme.colors.textSecondary,
+    color: theme.colors.text,
     fontSize: 16,
     fontWeight: '600',
   },

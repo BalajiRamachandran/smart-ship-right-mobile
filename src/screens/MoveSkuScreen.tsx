@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
+  Image,
   ScrollView,
   StyleSheet,
   Text,
@@ -36,6 +37,7 @@ type Step = 'sku' | 'source' | 'destination' | 'quantity' | 'success';
 type LastMoveSummary = {
   skuCode: string;
   skuName: string;
+  imageUrl?: string | null;
   from: string;
   to: string;
   quantity: number;
@@ -46,6 +48,7 @@ type Sku = {
   sku_code: string;
   name: string;
   barcode?: string | null;
+  primary_image_url?: string | null;
 };
 
 type LocationSkuInventory = {
@@ -140,7 +143,8 @@ const MoveSkuScreen: React.FC<Props> = ({ navigation, route }) => {
     if (scannedField === 'source') void handleSourceScan(scannedValue);
     if (scannedField === 'destination') void handleDestinationScan(scannedValue);
 
-    navigation.setParams({ scannedField: undefined, scannedValue: undefined } as any);
+    // Clear so we don't re-process; use empty string so SET_PARAMS payload is non-empty (avoids navigator error)
+    navigation.setParams({ scannedField: '', scannedValue: '' } as any);
   }, [route.params?.scannedField, route.params?.scannedValue]);
 
   const canMove = useMemo(() => {
@@ -175,11 +179,21 @@ const MoveSkuScreen: React.FC<Props> = ({ navigation, route }) => {
       if (!data?.success) {
         throw new Error(data?.error || 'SKU not found');
       }
+      let imageUrls: string[] = [];
+      if (Array.isArray(data.image_urls)) imageUrls = data.image_urls;
+      else if (typeof data.additional_images === 'string') {
+        try {
+          const parsed = JSON.parse(data.additional_images);
+          if (Array.isArray(parsed)) imageUrls = parsed;
+        } catch {}
+      }
+      const primaryImage = data.primary_image_url || imageUrls[0] || null;
       setSku({
         id: data.id,
         sku_code: data.sku_code,
         name: data.name,
         barcode: data.barcode,
+        primary_image_url: primaryImage,
       });
       setStep('source');
     } catch (e: any) {
@@ -328,6 +342,7 @@ const MoveSkuScreen: React.FC<Props> = ({ navigation, route }) => {
       setLastMoveSummary({
         skuCode: sku.sku_code,
         skuName: sku.name,
+        imageUrl: sku.primary_image_url,
         from: sourceLocation.trim(),
         to: destinationLocation.trim(),
         quantity: Number(quantity),
@@ -417,7 +432,13 @@ const MoveSkuScreen: React.FC<Props> = ({ navigation, route }) => {
 
           <View style={styles.summaryCard}>
             <View style={styles.summaryRow}>
-              <Package size={18} color={theme.colors.primary} strokeWidth={2} />
+              {lastMoveSummary.imageUrl ? (
+                <Image source={{ uri: lastMoveSummary.imageUrl }} style={styles.summarySkuImage} resizeMode="cover" />
+              ) : (
+                <View style={styles.summarySkuImagePlaceholder}>
+                  <Package size={20} color={theme.colors.textMuted} strokeWidth={2} />
+                </View>
+              )}
               <View style={styles.summaryTextBlock}>
                 <Text style={styles.summaryLabel}>SKU</Text>
                 <Text style={styles.summaryValue}>{lastMoveSummary.skuCode}</Text>
@@ -510,7 +531,13 @@ const MoveSkuScreen: React.FC<Props> = ({ navigation, route }) => {
 
         {sku ? (
           <View style={styles.skuChip}>
-            <Package size={18} color={theme.colors.primary} strokeWidth={2} />
+            {sku.primary_image_url ? (
+              <Image source={{ uri: sku.primary_image_url }} style={styles.skuChipImage} resizeMode="cover" />
+            ) : (
+              <View style={styles.skuChipImagePlaceholder}>
+                <Package size={20} color={theme.colors.textMuted} strokeWidth={2} />
+              </View>
+            )}
             <View style={styles.skuChipText}>
               <Text style={styles.skuChipCode}>{sku.sku_code}</Text>
               <Text style={styles.skuChipName} numberOfLines={1}>{sku.name}</Text>
@@ -825,6 +852,20 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(59,130,246,0.4)',
     gap: theme.spacing.sm,
   },
+  skuChipImage: {
+    width: 44,
+    height: 44,
+    borderRadius: theme.radius.md,
+    backgroundColor: theme.colors.background,
+  },
+  skuChipImagePlaceholder: {
+    width: 44,
+    height: 44,
+    borderRadius: theme.radius.md,
+    backgroundColor: theme.colors.backgroundElevated,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   skuChipText: { flex: 1 },
   skuChipCode: {
     ...theme.typography.label,
@@ -949,6 +990,20 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     gap: theme.spacing.md,
     marginBottom: theme.spacing.lg,
+  },
+  summarySkuImage: {
+    width: 44,
+    height: 44,
+    borderRadius: theme.radius.md,
+    backgroundColor: theme.colors.background,
+  },
+  summarySkuImagePlaceholder: {
+    width: 44,
+    height: 44,
+    borderRadius: theme.radius.md,
+    backgroundColor: theme.colors.backgroundElevated,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   summaryTextBlock: { flex: 1 },
   summaryLabel: {

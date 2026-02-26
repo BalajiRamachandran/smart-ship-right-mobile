@@ -41,10 +41,10 @@ const AdjustScreen: React.FC<Props> = ({ navigation, route }) => {
       } catch (e: any) {
         const formatted = formatApiError(e);
         setError(formatted.message);
+        navigation.setParams({ scannedField: undefined, scannedValue: undefined } as any);
       } finally {
         setLoading(false);
       }
-      navigation.setParams({ scannedField: undefined, scannedValue: undefined } as any);
     };
 
     void lookupAndNavigate();

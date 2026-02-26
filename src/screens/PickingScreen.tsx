@@ -180,7 +180,8 @@ const PickingScreen: React.FC<Props> = ({ navigation, route }) => {
       void scanPickItem(scannedValue);
     }
 
-    navigation.setParams({ scannedField: undefined, scannedValue: undefined } as any);
+    // Clear so we don't re-process; use empty string so SET_PARAMS payload is non-empty (avoids navigator error)
+    navigation.setParams({ scannedField: '', scannedValue: '' } as any);
   }, [route.params?.scannedField, route.params?.scannedValue]);
 
   const lookupTote = async () => {

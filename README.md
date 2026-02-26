@@ -8,9 +8,12 @@ A React Native (Expo) mobile app for warehouse operations: orders, inventory mov
 
 - **Orders** — Browse and filter orders by status (Pending, Picking, Packed, Shipped, Hold, Cancelled) and sort by date, amount, or customer. Infinite scroll pagination and pull-to-refresh.
 - **Move SKU** — Move inventory between locations: scan SKU → scan source → scan destination → enter quantity → confirm. Step-by-step flow with progress and confirmation screen.
+- **Adjust** — Set a SKU’s total inventory quantity with a reason: scan SKU → enter new quantity and reason → save. Uses same API as web (`POST /api/inventory/skus/{id}/adjust-inventory`); shows Shopify sync status on success.
 - **Picking** — Create picking batches (quick start or custom by category/type/order count), assign a tote, scan items to pick, and complete the batch. Progress strip and single primary action per step (scan tote, scan next item).
 
 All flows use the device camera for barcode scanning and are designed for one-handed, task-focused use.
+
+**Docs**: [Adjust Inventory spec](docs/SPEC_SKU_EDIT_QUANTITY.md) and [testing checklist](docs/ADJUST_INVENTORY_TESTING.md).
 
 ---
 
