@@ -1,21 +1,13 @@
 {
-  "cli": {
-    "version": ">= 18.0.5",
-    "appVersionSource": "remote"
-  },
+  "cli": { "version": ">= 18.0.5", "appVersionSource": "remote" },
   "build": {
-    "development": {
-      "developmentClient": true,
-      "distribution": "internal"
-    },
-    "preview": {
-      "distribution": "internal"
-    },
+    "development": { "developmentClient": true, "distribution": "internal" },
+    "preview": { "distribution": "internal" },
     "production": {
-      "autoIncrement": true
+      "autoIncrement": true,
+      "env": { "EAS_BUILD_NO_EXPO_GO_WARNING": "true" },
+      "android": { "image": "latest" }
     }
   },
-  "submit": {
-    "production": {}
-  }
+  "submit": { "production": {} }
 }

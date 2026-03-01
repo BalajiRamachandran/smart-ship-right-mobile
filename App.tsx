@@ -17,16 +17,22 @@ import DebugToast from './src/components/DebugToast';
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 function RootNavigator() {
-  const hydrated = useApiUrlStore((s) => s.hydrated);
+  const apiUrlHydrated = useApiUrlStore((s) => s.hydrated);
   const apiUrl = useApiUrlStore((s) => s.apiUrl);
-  const hydrate = useApiUrlStore((s) => s.hydrate);
+  const hydrateApiUrl = useApiUrlStore((s) => s.hydrate);
+  const authHydrated = useAuthStore((s) => s.hydrated);
+  const hydrateAuth = useAuthStore((s) => s.hydrate);
   const token = useAuthStore((state) => state.token);
 
   useEffect(() => {
-    void hydrate();
-  }, [hydrate]);
+    void hydrateApiUrl();
+  }, [hydrateApiUrl]);
 
-  if (!hydrated) {
+  useEffect(() => {
+    if (apiUrlHydrated) void hydrateAuth();
+  }, [apiUrlHydrated, hydrateAuth]);
+
+  if (!apiUrlHydrated || !authHydrated) {
     return <AnimatedSplash />;
   }
 

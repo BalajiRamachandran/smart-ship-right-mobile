@@ -56,18 +56,19 @@ npm install
 Create a `.env` file in the project root (see `.env.example`):
 
 ```env
-# Backend API base URL (no trailing slash)
-# Examples: https://your-api.example.com  or  http://192.168.1.100:8080
-EXPO_PUBLIC_API_URL=http://192.168.86.125:8080
+# Backend API base URL (no trailing slash). Used when the user has not set one in the app.
+EXPO_PUBLIC_API_URL=https://your-backend.example.com
 
-# Optional: show verbose debug logs and errors on screen (Move SKU, Picking, etc.)
+# Set to true to show the Orders tab; false (default) for warehouse users.
+EXPO_PUBLIC_SHOW_ORDERS_TAB=false
+
+# Optional: show verbose debug logs and errors on screen.
 EXPO_PUBLIC_SCREEN_DEBUG=false
 ```
 
-- **EXPO_PUBLIC_API_URL** — Required for all API calls. Use your machine’s LAN IP (e.g. `http://192.168.x.x:8080`) when testing on a physical device with Expo Go so the phone can reach the backend.
-- **EXPO_PUBLIC_SCREEN_DEBUG** — When `true`, surfaces detailed API errors and debug info on screen; set to `false` in production.
-
-If `EXPO_PUBLIC_API_URL` is not set, the app falls back to a default URL defined in `src/config/api.ts`.
+- **EXPO_PUBLIC_API_URL** — Default backend URL. Users are not prompted to enter the API URL on launch; they can change it anytime in **Settings → Backend API**. Use your LAN IP (e.g. `http://192.168.x.x:8080`) when testing with Expo Go.
+- **EXPO_PUBLIC_SHOW_ORDERS_TAB** — When `true`, the Orders tab is visible; when `false` (default for sharing), the Orders tab is hidden (the screen remains in the app for internal use).
+- **EXPO_PUBLIC_SCREEN_DEBUG** — When `true`, surfaces detailed API errors on screen; set to `false` in production.
 
 ---
 
@@ -132,7 +133,7 @@ smart-ship-right-mobile/
     │   └── debug.ts       # Screen-level debug flag
     ├── navigation/
     │   ├── types.ts       # Root, Main tab, MoveSku, Picking param lists
-    │   ├── MainTabs.tsx   # Bottom tabs: Orders | Move SKU | Picking
+    │   ├── MainTabs.tsx   # Bottom tabs (Orders hidden by default; Move SKU | Picking | Adjust | Settings)
     │   ├── MoveSkuStack.tsx
     │   └── PickingStack.tsx
     ├── screens/
@@ -186,7 +187,19 @@ All authenticated requests use `Authorization: Bearer <token>`. The base URL is 
 - **EAS Build** (Expo Application Services): configure `eas.json` and run `eas build` for iOS/Android.
 - **Local build**: after `npx expo prebuild`, open the `ios` or `android` folder in Xcode or Android Studio and archive / build as usual.
 
-Ensure production builds use a production `EXPO_PUBLIC_API_URL` and `EXPO_PUBLIC_SCREEN_DEBUG=false` (or omit debug).
+Use a production `EXPO_PUBLIC_API_URL` and `EXPO_PUBLIC_SCREEN_DEBUG=false` for builds you share.
+
+---
+
+## Sharing the app with users
+
+To distribute the app to warehouse users:
+
+1. **Set your default backend** in `.env`: `EXPO_PUBLIC_API_URL=https://your-api.example.com` (or leave unset to use the in-code default). Users are not asked to enter the API URL on first launch; they can change it in **Settings** if needed.
+
+2. **Hide the Orders tab** (default): `EXPO_PUBLIC_SHOW_ORDERS_TAB=false`. The Orders screen stays in the app but is not shown in the tab bar. Set to `true` only if you want the Orders tab visible.
+
+3. **Build** with EAS (`eas build --platform ios` / `--platform android`) or a local dev build, then share the installable app or link. Users open the app → log in → use Move SKU, Picking, and Adjust from the tabs.
 
 ---
 

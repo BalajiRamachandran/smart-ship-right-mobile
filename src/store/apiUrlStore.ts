@@ -33,10 +33,11 @@ export const useApiUrlStore = create<ApiUrlState>((set, get) => ({
       const url = stored && stored.trim().length > 0 ? stored.trim() : null;
       const effective = url ?? getDefaultUrl();
       apiClient.setBaseUrl(effective);
-      set({ apiUrl: url, hydrated: true });
+      // Use effective URL so we don't show API setup on every launch; user can change in Settings
+      set({ apiUrl: effective, hydrated: true });
     } catch {
       apiClient.setBaseUrl(getDefaultUrl());
-      set({ apiUrl: null, hydrated: true });
+      set({ apiUrl: getDefaultUrl(), hydrated: true });
     }
   },
 

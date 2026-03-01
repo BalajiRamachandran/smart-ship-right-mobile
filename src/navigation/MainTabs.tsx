@@ -40,10 +40,15 @@ const tabIcon = (Icon: React.ComponentType<{ size: number; color: string }>, foc
   <Icon size={22} color={focused ? theme.colors.tabActive : theme.colors.tabInactive} />
 );
 
+/** Set to true to show Orders tab (e.g. for internal use). When false, Orders is hidden but still in the navigator. */
+const SHOW_ORDERS_TAB = process.env.EXPO_PUBLIC_SHOW_ORDERS_TAB === 'true';
+
 const MainTabs: React.FC = () => {
+  const initialRoute = SHOW_ORDERS_TAB ? 'Orders' : 'MoveSku';
+
   return (
     <Tab.Navigator
-      initialRouteName="Orders"
+      initialRouteName={initialRoute}
       screenOptions={{
         headerTitleAlign: 'center',
         tabBarActiveTintColor: theme.colors.tabActive,
@@ -62,14 +67,16 @@ const MainTabs: React.FC = () => {
         headerTitleStyle: { fontSize: 17, fontWeight: '700' },
       }}
     >
-      <Tab.Screen
-        name="Orders"
-        component={OrdersListScreen}
-        options={{
-          title: 'Orders',
-          tabBarIcon: ({ focused }) => tabIcon(ClipboardList, focused),
-        }}
-      />
+      {SHOW_ORDERS_TAB ? (
+        <Tab.Screen
+          name="Orders"
+          component={OrdersListScreen}
+          options={{
+            title: 'Orders',
+            tabBarIcon: ({ focused }) => tabIcon(ClipboardList, focused),
+          }}
+        />
+      ) : null}
       <Tab.Screen
         name="MoveSku"
         component={MoveSkuStack}
