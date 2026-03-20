@@ -19,6 +19,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { AlertTriangle, CheckCircle, Clock, Package, PlayCircle, PlusCircle, ScanBarcode } from 'lucide-react-native';
 import type { MainTabParamList, PickingStackParamList } from '../navigation/types';
 import { api } from '../api/client';
+import ShipRightLogo from '../components/ShipRightLogo';
 import { useAuthStore } from '../store/authStore';
 import { useDebugStore } from '../store/debugStore';
 import { formatApiError } from '../utils/formatApiError';
@@ -642,6 +643,9 @@ const PickingScreen: React.FC<Props> = ({ navigation, route }) => {
           />
         }
       >
+        <View style={styles.startLogoWrap}>
+          <ShipRightLogo width={200} height={44} />
+        </View>
         <Text style={styles.shipHeroUserName}>{displayName}</Text>
         <Text style={styles.shipHeroUserSubtitle}>Ready to ship</Text>
 
@@ -1365,6 +1369,10 @@ const styles = StyleSheet.create({
   },
   startContent: {
     paddingBottom: theme.spacing.xxl + theme.spacing.section,
+  },
+  startLogoWrap: {
+    marginBottom: theme.spacing.md,
+    alignItems: 'flex-start',
   },
   startTitle: {
     ...theme.typography.title,

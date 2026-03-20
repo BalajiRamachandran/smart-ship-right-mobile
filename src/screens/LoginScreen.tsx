@@ -12,6 +12,7 @@ import {
 import { useAuthStore } from '../store/authStore';
 import { useLayout } from '../hooks/useLayout';
 import { GlassView } from '../components/GlassView';
+import ShipRightLogo from '../components/ShipRightLogo';
 import { theme } from '../theme';
 
 const LoginScreen: React.FC = () => {
@@ -35,7 +36,7 @@ const LoginScreen: React.FC = () => {
     >
       <GlassView style={[styles.card, { maxWidth: contentWidth, marginHorizontal: horizontalPadding }]}>
         <View style={styles.brand}>
-          <Text style={styles.title}>Smart-Ship-Right</Text>
+          <ShipRightLogo />
           <Text style={styles.subtitle}>Warehouse Management</Text>
         </View>
 
@@ -113,18 +114,11 @@ const styles = StyleSheet.create({
   brand: {
     marginBottom: theme.spacing.xxl,
   },
-  title: {
-    ...theme.typography.title,
-    fontSize: 26,
-    color: theme.colors.text,
-    textAlign: 'center',
-    letterSpacing: 0.5,
-  },
   subtitle: {
     ...theme.typography.bodySmall,
     color: theme.colors.textSecondary,
     textAlign: 'center',
-    marginTop: theme.spacing.xs,
+    marginTop: theme.spacing.sm,
   },
   fieldGroup: {
     marginBottom: theme.spacing.lg,
