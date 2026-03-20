@@ -3,6 +3,7 @@ import {
   ActivityIndicator,
   ScrollView,
   StyleSheet,
+  Switch,
   Text,
   TextInput,
   TouchableOpacity,
@@ -11,6 +12,7 @@ import {
 import { Settings, LogOut } from 'lucide-react-native';
 import { useApiUrlStore } from '../store/apiUrlStore';
 import { useAuthStore } from '../store/authStore';
+import { useDebugStore } from '../store/debugStore';
 import { useLayout } from '../hooks/useLayout';
 import { GlassView } from '../components/GlassView';
 import { theme } from '../theme';
@@ -30,6 +32,8 @@ const SettingsScreen: React.FC = () => {
   const getEffectiveUrl = useApiUrlStore((s) => s.getEffectiveUrl);
   const setApiUrl = useApiUrlStore((s) => s.setApiUrl);
   const logout = useAuthStore((s) => s.logout);
+  const screenDebugEnabled = useDebugStore((s) => s.screenDebugEnabled);
+  const setScreenDebugEnabled = useDebugStore((s) => s.setScreenDebugEnabled);
 
   const [url, setUrl] = useState(() => getEffectiveUrl());
   const [saving, setSaving] = useState(false);
@@ -102,6 +106,27 @@ const SettingsScreen: React.FC = () => {
         >
           {saving ? <ActivityIndicator color="#fff" size="small" /> : <Text style={styles.primaryButtonText}>Save API URL</Text>}
         </TouchableOpacity>
+      </GlassView>
+
+      <GlassView style={[styles.section, styles.sectionFullWidth]}>
+        <View style={styles.sectionHeader}>
+          <Settings size={20} color={theme.colors.primary} strokeWidth={2} />
+          <Text style={styles.sectionTitle}>Developer</Text>
+        </View>
+        <View style={styles.toggleRow}>
+          <View style={styles.toggleTextWrap}>
+            <Text style={styles.toggleTitle}>Screen Debug</Text>
+            <Text style={styles.toggleHint}>Show verbose screen-level debug logs and details.</Text>
+          </View>
+          <Switch
+            value={screenDebugEnabled}
+            onValueChange={(value) => {
+              void setScreenDebugEnabled(value);
+            }}
+            trackColor={{ false: theme.colors.border, true: theme.colors.primary }}
+            thumbColor="#fff"
+          />
+        </View>
       </GlassView>
 
       <GlassView style={[styles.section, styles.sectionFullWidth]}>
@@ -188,6 +213,25 @@ const styles = StyleSheet.create({
     opacity: 0.9,
     marginBottom: theme.spacing.md,
     lineHeight: 20,
+  },
+  toggleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: theme.spacing.md,
+  },
+  toggleTextWrap: {
+    flex: 1,
+  },
+  toggleTitle: {
+    ...theme.typography.body,
+    color: theme.colors.text,
+    fontWeight: '600',
+  },
+  toggleHint: {
+    ...theme.typography.bodySmall,
+    color: theme.colors.textSecondary,
+    marginTop: 2,
   },
   input: {
     height: 48,

@@ -759,6 +759,9 @@ const PickingScreen: React.FC<Props> = ({ navigation, route }) => {
   if (mode === 'create') {
     return (
       <ScrollView style={styles.container} contentContainerStyle={styles.createContent} showsVerticalScrollIndicator={false}>
+        <TouchableOpacity style={styles.createBackLink} onPress={() => setMode('start')} activeOpacity={0.8}>
+          <Text style={styles.createBackLinkText}>← Back to picking</Text>
+        </TouchableOpacity>
         <View style={styles.createHero}>
           <Text style={styles.createTitle}>Create batch</Text>
           <Text style={styles.createSubtitle}>Choose category, type, and how many orders to pick</Text>
@@ -1625,6 +1628,16 @@ const styles = StyleSheet.create({
   },
   createContent: {
     paddingBottom: theme.spacing.xxl + 24,
+  },
+  createBackLink: {
+    minHeight: theme.minTouchTarget,
+    justifyContent: 'center',
+    marginBottom: theme.spacing.sm,
+  },
+  createBackLinkText: {
+    ...theme.typography.bodySmall,
+    color: theme.colors.primary,
+    fontWeight: '600',
   },
   createHero: {
     marginBottom: theme.spacing.xl,
