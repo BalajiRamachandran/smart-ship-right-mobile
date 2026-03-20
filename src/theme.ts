@@ -21,7 +21,8 @@ export const theme = {
     error: '#ef4444',
     errorDim: 'rgba(239, 68, 68, 0.15)',
     tabActive: '#3b82f6',
-    tabInactive: '#94a3b8',
+    tabInactive: '#94a3b8', // visible on dark tab bar
+    tabBarBackground: '#0f172a', // solid dark to match app, ensure contrast
   },
   spacing: {
     xs: 4,
@@ -30,7 +31,9 @@ export const theme = {
     lg: 16,
     xl: 20,
     xxl: 24,
+    section: 28, // visual rhythm between sections
   },
+  minTouchTarget: 44, // accessibility
   radius: {
     sm: 8,
     md: 12,
@@ -53,6 +56,13 @@ export const theme = {
       shadowOpacity: 0.15,
       shadowRadius: 8,
       elevation: 3,
+    },
+    button: {
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.2,
+      shadowRadius: 6,
+      elevation: 4,
     },
   },
 } as const;

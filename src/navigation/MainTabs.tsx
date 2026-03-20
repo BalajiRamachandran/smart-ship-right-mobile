@@ -1,8 +1,6 @@
 import React from 'react';
-import { Platform, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import Constants from 'expo-constants';
-import { BlurView } from 'expo-blur';
 import { ClipboardList, Package, Move, SlidersHorizontal, Settings } from 'lucide-react-native';
 
 import type { MainTabParamList } from './types';
@@ -15,26 +13,25 @@ import { theme } from '../theme';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
-/** In Expo Go, BlurView causes "Unable to get the view config for ExpoBlurView". Use solid background there. */
-const useTabBarBlur = (Platform.OS === 'ios' || Platform.OS === 'android') && Constants.appOwnership !== 'expo';
-
-function TabBarGlassBackground() {
+/** Solid dark tab bar for clear contrast; no blur so background is never light grey. */
+function TabBarBackground() {
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="none">
-      {useTabBarBlur ? (
-        <BlurView intensity={70} tint="dark" style={StyleSheet.absoluteFill} />
-      ) : (
-        <View style={[StyleSheet.absoluteFill, { backgroundColor: theme.colors.backgroundCard }]} />
-      )}
       <View
         style={[
           StyleSheet.absoluteFill,
-          { borderTopWidth: 1, borderTopColor: 'rgba(148, 163, 184, 0.2)' },
+          {
+            backgroundColor: theme.colors.tabBarBackground ?? theme.colors.background,
+            borderTopWidth: 1,
+            borderTopColor: theme.colors.borderStrong,
+          },
         ]}
       />
     </View>
   );
 }
+// Alias for backwards compatibility (e.g. cached bundles that still reference old name)
+const TabBarGlassBackground = TabBarBackground;
 
 const tabIcon = (Icon: React.ComponentType<{ size: number; color: string }>, focused: boolean) => (
   <Icon size={22} color={focused ? theme.colors.tabActive : theme.colors.tabInactive} />
@@ -53,7 +50,7 @@ const MainTabs: React.FC = () => {
         headerTitleAlign: 'center',
         tabBarActiveTintColor: theme.colors.tabActive,
         tabBarInactiveTintColor: theme.colors.tabInactive,
-        tabBarBackground: () => <TabBarGlassBackground />,
+        tabBarBackground: () => <TabBarBackground />,
         tabBarStyle: {
           backgroundColor: 'transparent',
           borderTopWidth: 0,

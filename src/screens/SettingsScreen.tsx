@@ -15,8 +15,18 @@ import { useLayout } from '../hooks/useLayout';
 import { GlassView } from '../components/GlassView';
 import { theme } from '../theme';
 
+function getInitials(fullName: string | null, username: string): string {
+  if (fullName?.trim()) {
+    const parts = fullName.trim().split(/\s+/);
+    if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    return fullName.slice(0, 2).toUpperCase();
+  }
+  return username.slice(0, 2).toUpperCase();
+}
+
 const SettingsScreen: React.FC = () => {
   const { horizontalPadding } = useLayout();
+  const user = useAuthStore((s) => s.user);
   const getEffectiveUrl = useApiUrlStore((s) => s.getEffectiveUrl);
   const setApiUrl = useApiUrlStore((s) => s.setApiUrl);
   const logout = useAuthStore((s) => s.logout);
@@ -51,6 +61,20 @@ const SettingsScreen: React.FC = () => {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={[styles.content, { paddingHorizontal: horizontalPadding }]} keyboardShouldPersistTaps="handled">
+      {user && (
+        <GlassView style={[styles.section, styles.sectionFullWidth, styles.profileSection]}>
+          <View style={styles.profileRow}>
+            <View style={styles.profileAvatar}>
+              <Text style={styles.profileInitials}>{getInitials(user.full_name || null, user.username)}</Text>
+            </View>
+            <View style={styles.profileInfo}>
+              <Text style={styles.profileName}>{user.full_name?.trim() || user.username}</Text>
+              {user.email ? <Text style={styles.profileEmail} numberOfLines={1}>{user.email}</Text> : null}
+              <Text style={styles.profileRole}>{user.role}</Text>
+            </View>
+          </View>
+        </GlassView>
+      )}
       <GlassView style={[styles.section, styles.sectionFullWidth]}>
         <View style={styles.sectionHeader}>
           <Settings size={20} color={theme.colors.primary} strokeWidth={2} />
@@ -108,6 +132,45 @@ const styles = StyleSheet.create({
   },
   sectionFullWidth: {
     width: '100%',
+  },
+  profileSection: {
+    marginBottom: theme.spacing.lg,
+  },
+  profileRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.md,
+  },
+  profileAvatar: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: theme.colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  profileInitials: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#fff',
+  },
+  profileInfo: {
+    flex: 1,
+    minWidth: 0,
+  },
+  profileName: {
+    ...theme.typography.titleSmall,
+    color: theme.colors.text,
+  },
+  profileEmail: {
+    ...theme.typography.bodySmall,
+    color: theme.colors.textSecondary,
+    marginTop: 2,
+  },
+  profileRole: {
+    ...theme.typography.caption,
+    color: theme.colors.textMuted,
+    marginTop: 2,
   },
   sectionHeader: {
     flexDirection: 'row',
