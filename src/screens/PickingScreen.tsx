@@ -120,6 +120,7 @@ const PickingScreen: React.FC<Props> = ({ navigation, route }) => {
   const [batches, setBatches] = useState<BatchListItem[]>([]);
   const [batchesLoading, setBatchesLoading] = useState(false);
   const [batchesRefreshing, setBatchesRefreshing] = useState(false);
+  const [batchActionLoading, setBatchActionLoading] = useState<{ id: string; action: 'reset' | 'delete' } | null>(null);
 
   // Completion celebration (after batch complete)
   const [showCompletionScreen, setShowCompletionScreen] = useState(false);
@@ -187,12 +188,17 @@ const PickingScreen: React.FC<Props> = ({ navigation, route }) => {
           style: 'destructive',
           onPress: async () => {
             setError(null);
+            setBatchActionLoading({ id, action: 'reset' });
             try {
               await api.post(`/api/picking/batches/${encodeURIComponent(id)}/reset`);
               await loadBatches();
+              Alert.alert('Batch reset', 'The batch was reset and is ready to be started again.');
             } catch (e: any) {
               const formatted = formatApiError(e);
               setError(formatted.message);
+              Alert.alert('Reset failed', formatted.message);
+            } finally {
+              setBatchActionLoading((curr) => (curr?.id === id && curr.action === 'reset' ? null : curr));
             }
           },
         },
@@ -211,12 +217,17 @@ const PickingScreen: React.FC<Props> = ({ navigation, route }) => {
           style: 'destructive',
           onPress: async () => {
             setError(null);
+            setBatchActionLoading({ id, action: 'delete' });
             try {
-              await api.delete(`/api/picking/batches/${encodeURIComponent(id)}`);
+              await api.delete(`/api/picking/batches/${encodeURIComponent(id)}`, { params: { force: true } });
               await loadBatches();
+              Alert.alert('Batch deleted', 'The batch was deleted successfully.');
             } catch (e: any) {
               const formatted = formatApiError(e);
               setError(formatted.message);
+              Alert.alert('Delete failed', formatted.message);
+            } finally {
+              setBatchActionLoading((curr) => (curr?.id === id && curr.action === 'delete' ? null : curr));
             }
           },
         },
@@ -387,7 +398,7 @@ const PickingScreen: React.FC<Props> = ({ navigation, route }) => {
     [batchId, loadPickList]
   );
 
-  const scanPickItem = async (barcode: string) => {
+  const pickWithQuantity = async (barcode: string, quantityPicked: number) => {
     if (!user?.id) {
       setError('You must be signed in to pick items.');
       return;
@@ -401,7 +412,7 @@ const PickingScreen: React.FC<Props> = ({ navigation, route }) => {
     try {
       await api.post(`/api/picking/batches/${encodeURIComponent(batchId.trim())}/scan_item`, {
         barcode,
-        quantity_picked: 1,
+        quantity_picked: quantityPicked,
         picker_id: user.id,
       });
       await loadPickListForBatch(batchId.trim());
@@ -412,6 +423,45 @@ const PickingScreen: React.FC<Props> = ({ navigation, route }) => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const scanPickItem = async (barcode: string) => {
+    const candidate =
+      pickList.find((i) => i.sku_id === barcode || i.sku_code === barcode) ??
+      (currentItem && (currentItem.sku_id === barcode || currentItem.sku_code === barcode) ? currentItem : null) ??
+      currentItem;
+
+    const required = candidate ? (candidate.total_quantity_required ?? candidate.quantity_required ?? 0) : 0;
+    const picked = candidate?.quantity_picked ?? 0;
+    const remaining = Math.max(0, required - picked);
+
+    // Backend expects cumulative quantity_picked, not an increment.
+    const defaultCumulative = required > 0 ? Math.min(required, picked + 1) : 1;
+
+    if (required > 1 && remaining > 1) {
+      const maxQuick = Math.min(4, remaining);
+      const quickOptions = Array.from({ length: maxQuick }, (_, idx) => idx + 1);
+      const actions = quickOptions.map((n) => ({
+        text: String(n),
+        onPress: () => {
+          void pickWithQuantity(barcode, Math.min(required, picked + n));
+        },
+      }));
+      actions.push({
+        text: `All (${remaining})`,
+        onPress: () => {
+          void pickWithQuantity(barcode, required);
+        },
+      });
+
+      Alert.alert('Confirm quantity', `How many did you pick now?\nRequired: ${required} • Already picked: ${picked}`, [
+        { text: 'Cancel', style: 'cancel' },
+        ...actions,
+      ]);
+      return;
+    }
+
+    await pickWithQuantity(barcode, defaultCumulative);
   };
 
   const completeBatch = async () => {
@@ -678,11 +728,15 @@ const PickingScreen: React.FC<Props> = ({ navigation, route }) => {
               const progress = total > 0 ? `${picked}/${total}` : '—';
               const statusLabel = b.status === 'in_progress' ? 'In progress' : b.status === 'pending' ? 'Pending' : b.status === 'completed' ? 'Completed' : b.status;
               const statusStyle = b.status === 'in_progress' ? styles.batchRowStatusInProgress : b.status === 'completed' ? styles.batchRowStatusCompleted : styles.batchRowStatusPending;
+              const isResetting = batchActionLoading?.id === b.id && batchActionLoading.action === 'reset';
+              const isDeleting = batchActionLoading?.id === b.id && batchActionLoading.action === 'delete';
+              const rowActionBusy = isResetting || isDeleting;
               return (
                 <View key={b.id} style={[styles.batchRow, statusStyle]}>
                   <TouchableOpacity
                     style={styles.batchRowMainTouchable}
                     onPress={() => openBatch(b)}
+                    disabled={rowActionBusy}
                     activeOpacity={0.8}
                   >
                     <View style={styles.batchRowMain}>
@@ -706,17 +760,19 @@ const PickingScreen: React.FC<Props> = ({ navigation, route }) => {
                     </View>
                   </TouchableOpacity>
                   <TouchableOpacity
-                    style={styles.batchRowAction}
+                    style={[styles.batchRowAction, rowActionBusy && styles.batchRowActionDisabled]}
                     onPress={() => resetBatch(b.id)}
+                    disabled={rowActionBusy}
                   >
-                    <Text style={styles.batchRowActionText}>Reset</Text>
+                    {isResetting ? <ActivityIndicator size="small" color={theme.colors.primary} /> : <Text style={styles.batchRowActionText}>Reset</Text>}
                   </TouchableOpacity>
                   {b.status !== 'completed' ? (
                     <TouchableOpacity
-                      style={[styles.batchRowAction, styles.batchRowActionDanger]}
+                      style={[styles.batchRowAction, styles.batchRowActionDanger, rowActionBusy && styles.batchRowActionDisabled]}
                       onPress={() => deleteBatch(b.id)}
+                      disabled={rowActionBusy}
                     >
-                      <Text style={styles.batchRowActionTextDanger}>Delete</Text>
+                      {isDeleting ? <ActivityIndicator size="small" color={theme.colors.error} /> : <Text style={styles.batchRowActionTextDanger}>Delete</Text>}
                     </TouchableOpacity>
                   ) : null}
                 </View>
@@ -1093,6 +1149,18 @@ const PickingScreen: React.FC<Props> = ({ navigation, route }) => {
               {currentItem.sku_name ? <Text style={styles.currentItemSkuName} numberOfLines={2}>{currentItem.sku_name}</Text> : null}
               <Text style={styles.currentItemQty}>
                 Qty: {(currentItem.total_quantity_required ?? currentItem.quantity_required ?? 0) - (currentItem.quantity_picked ?? 0)} remaining
+              </Text>
+            </View>
+          </View>
+          <View style={styles.currentItemFocusRow}>
+            <View style={styles.currentItemFocusBlock}>
+              <Text style={styles.currentItemFocusLabel}>LOCATION</Text>
+              <Text style={styles.currentItemFocusValue}>{currentItem.location || '—'}</Text>
+            </View>
+            <View style={styles.currentItemFocusBlock}>
+              <Text style={styles.currentItemFocusLabel}>PICK QTY</Text>
+              <Text style={styles.currentItemFocusValue}>
+                {Math.max(0, (currentItem.total_quantity_required ?? currentItem.quantity_required ?? 0) - (currentItem.quantity_picked ?? 0))}
               </Text>
             </View>
           </View>
@@ -1600,6 +1668,13 @@ const styles = StyleSheet.create({
     marginLeft: theme.spacing.sm,
     borderRadius: theme.radius.sm,
     backgroundColor: theme.colors.primaryDim,
+    minWidth: 68,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: theme.minTouchTarget - 8,
+  },
+  batchRowActionDisabled: {
+    opacity: 0.6,
   },
   batchRowActionDanger: {
     backgroundColor: theme.colors.errorDim,
@@ -2268,6 +2343,31 @@ const styles = StyleSheet.create({
     ...theme.typography.caption,
     color: theme.colors.textMuted,
     marginTop: theme.spacing.xs,
+  },
+  currentItemFocusRow: {
+    flexDirection: 'row',
+    gap: theme.spacing.sm,
+    marginBottom: theme.spacing.sm,
+  },
+  currentItemFocusBlock: {
+    flex: 1,
+    borderRadius: theme.radius.md,
+    borderWidth: 1,
+    borderColor: theme.colors.borderStrong,
+    backgroundColor: theme.colors.backgroundElevated,
+    paddingVertical: theme.spacing.sm,
+    paddingHorizontal: theme.spacing.md,
+  },
+  currentItemFocusLabel: {
+    ...theme.typography.caption,
+    color: theme.colors.textMuted,
+    marginBottom: 2,
+  },
+  currentItemFocusValue: {
+    ...theme.typography.titleSmall,
+    color: theme.colors.text,
+    fontSize: 22,
+    fontWeight: '800',
   },
   currentItemStep: {
     ...theme.typography.caption,
