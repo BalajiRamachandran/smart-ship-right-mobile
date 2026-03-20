@@ -1,13 +1,14 @@
 {
   "name": "smart-ship-right-mobile",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "main": "index.ts",
   "scripts": {
     "start": "expo start",
     "android": "expo run:android",
     "ios": "expo run:ios",
     "ios:ipad": "expo run:ios --device iPad",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "prepare": "husky"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "2.2.0",
@@ -36,6 +37,7 @@
   "devDependencies": {
     "@expo/cli": "^54.0.23",
     "@types/react": "~19.1.0",
+    "husky": "^9.1.7",
     "typescript": "~5.9.2"
   },
   "private": true
