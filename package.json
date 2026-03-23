@@ -1,6 +1,6 @@
 {
   "name": "smart-ship-right-mobile",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "main": "index.ts",
   "scripts": {
     "start": "expo start",
@@ -32,6 +32,7 @@
     "react-native-screens": "~4.16.0",
     "react-native-svg": "15.12.1",
     "react-native-web": "^0.21.0",
+    "vexo-analytics": "^1.5.4",
     "zustand": "^5.0.11"
   },
   "devDependencies": {
