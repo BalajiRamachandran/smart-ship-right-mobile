@@ -10,6 +10,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import Constants from 'expo-constants';
 import { Settings as SettingsIcon } from 'lucide-react-native';
 import { useAuthStore } from '../store/authStore';
 import { useLayout } from '../hooks/useLayout';
@@ -29,6 +30,7 @@ const LoginScreen: React.FC = () => {
   const error = useAuthStore((state) => state.error);
   const clearApiUrl = useApiUrlStore((s) => s.clearApiUrl);
   const effectiveApiUrl = useApiUrlStore((s) => s.getEffectiveUrl());
+  const appVersion = Constants.expoConfig?.version ?? (Constants as any).manifest?.version ?? 'unknown';
 
   const handleSubmit = () => {
     if (!username || !password || loading) return;
@@ -118,6 +120,7 @@ const LoginScreen: React.FC = () => {
         <Text style={styles.hint}>
           Use your existing Ship-Right credentials
         </Text>
+        <Text style={styles.versionText}>Version {appVersion}</Text>
       </GlassView>
 
       <Modal
@@ -261,6 +264,12 @@ const styles = StyleSheet.create({
   },
   hint: {
     marginTop: theme.spacing.lg,
+    ...theme.typography.caption,
+    color: theme.colors.textMuted,
+    textAlign: 'center',
+  },
+  versionText: {
+    marginTop: theme.spacing.sm,
     ...theme.typography.caption,
     color: theme.colors.textMuted,
     textAlign: 'center',
