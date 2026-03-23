@@ -19,6 +19,8 @@ interface ApiUrlState {
   hydrate: () => Promise<void>;
   /** Save URL to storage and update API client; optionally clear auth when changing backend */
   setApiUrl: (url: string, options?: { clearAuth?: boolean }) => Promise<void>;
+  /** Clear any stored custom API URL so user can re-enter */
+  clearApiUrl: () => Promise<void>;
   /** Return the effective base URL (stored, or env, or default) */
   getEffectiveUrl: () => string;
 }
@@ -56,6 +58,15 @@ export const useApiUrlStore = create<ApiUrlState>((set, get) => ({
       console.error('Failed to save API URL', e);
       throw e;
     }
+  },
+
+  clearApiUrl: async () => {
+    try {
+      await storage.removeItem(STORAGE_KEY);
+    } catch {}
+    // Point API client back to default, but force RootNavigator to show ApiSetupScreen
+    apiClient.setBaseUrl(getDefaultUrl());
+    set({ apiUrl: null, hydrated: true });
   },
 
   getEffectiveUrl: () => {

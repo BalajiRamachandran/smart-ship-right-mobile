@@ -13,6 +13,7 @@ import { useAuthStore } from '../store/authStore';
 import { useLayout } from '../hooks/useLayout';
 import { GlassView } from '../components/GlassView';
 import ShipRightLogo from '../components/ShipRightLogo';
+import { useApiUrlStore } from '../store/apiUrlStore';
 import { theme } from '../theme';
 
 const LoginScreen: React.FC = () => {
@@ -23,6 +24,7 @@ const LoginScreen: React.FC = () => {
   const login = useAuthStore((state) => state.login);
   const loading = useAuthStore((state) => state.loading);
   const error = useAuthStore((state) => state.error);
+  const clearApiUrl = useApiUrlStore((s) => s.clearApiUrl);
 
   const handleSubmit = () => {
     if (!username || !password || loading) return;
@@ -88,6 +90,17 @@ const LoginScreen: React.FC = () => {
           ) : (
             <Text style={styles.buttonText}>Sign In</Text>
           )}
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.secondaryButton}
+          onPress={() => {
+            // Keep it simple: clear saved API URL so the user can re-enter it.
+            void clearApiUrl();
+          }}
+          activeOpacity={0.85}
+        >
+          <Text style={styles.secondaryButtonText}>Backend Settings</Text>
         </TouchableOpacity>
 
         <Text style={styles.hint}>
@@ -164,6 +177,21 @@ const styles = StyleSheet.create({
   buttonText: {
     color: '#fff',
     fontSize: 16,
+    fontWeight: '700',
+  },
+  secondaryButton: {
+    height: 48,
+    borderRadius: theme.radius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: theme.spacing.md,
+    backgroundColor: theme.colors.backgroundElevated,
+    borderWidth: 1.5,
+    borderColor: theme.colors.borderStrong,
+  },
+  secondaryButtonText: {
+    color: theme.colors.text,
+    fontSize: 15,
     fontWeight: '700',
   },
   hint: {

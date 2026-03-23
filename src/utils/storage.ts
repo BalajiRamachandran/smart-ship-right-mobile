@@ -41,4 +41,20 @@ async function setItem(key: string, value: string): Promise<void> {
   // never throw: in-memory at least keeps the value for this session
 }
 
-export const storage = { getItem, setItem };
+async function removeItem(key: string): Promise<void> {
+  try {
+    await AsyncStorage.removeItem(key);
+    return;
+  } catch {
+    // fallback when native module is null
+  }
+  try {
+    if (isWeb() && typeof localStorage !== 'undefined') {
+      localStorage.removeItem(key);
+      return;
+    }
+  } catch {}
+  delete inMemory[key];
+}
+
+export const storage = { getItem, setItem, removeItem };
