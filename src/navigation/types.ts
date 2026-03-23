@@ -8,6 +8,7 @@ export type MainTabParamList = {
   MoveSku: undefined;
   Picking: undefined;
   Adjust: undefined;
+  Hospital: undefined;
   Settings: undefined;
 };
 

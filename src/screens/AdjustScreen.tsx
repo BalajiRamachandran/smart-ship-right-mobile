@@ -13,12 +13,18 @@ import { api } from '../api/client';
 import type { AdjustStackParamList } from '../navigation/types';
 import { formatApiError } from '../utils/formatApiError';
 import { theme } from '../theme';
+import SkuSearchDropdown, { type SkuSearchResult } from '../components/SkuSearchDropdown';
 
 type Props = NativeStackScreenProps<AdjustStackParamList, 'AdjustRoot'>;
 
 const AdjustScreen: React.FC<Props> = ({ navigation, route }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const handleSkuSelect = (sku: SkuSearchResult) => {
+    setError(null);
+    navigation.replace('AdjustInventory', { skuId: sku.id });
+  };
 
   useEffect(() => {
     const scannedField = route.params?.scannedField;
@@ -59,6 +65,11 @@ const AdjustScreen: React.FC<Props> = ({ navigation, route }) => {
     <ScrollView style={styles.container} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
       <Text style={styles.title}>Adjust inventory</Text>
       <Text style={styles.subtitle}>Scan a SKU to set its quantity and reason</Text>
+
+      <View style={styles.searchWrap}>
+        <Text style={styles.searchLabel}>Search SKU</Text>
+        <SkuSearchDropdown minChars={2} limit={8} onSelect={handleSkuSelect} />
+      </View>
 
       <TouchableOpacity style={styles.scanButton} onPress={openScanner} disabled={loading} activeOpacity={0.9}>
         {loading ? (
@@ -103,6 +114,8 @@ const styles = StyleSheet.create({
   scanHint: { marginTop: 4, fontSize: 13, color: 'rgba(255,255,255,0.9)' },
   errorBanner: { marginTop: theme.spacing.lg, padding: theme.spacing.md, borderRadius: theme.radius.sm, backgroundColor: theme.colors.errorDim, borderWidth: 1, borderColor: 'rgba(239, 68, 68, 0.4)' },
   errorText: { color: theme.colors.error, ...theme.typography.bodySmall },
+  searchWrap: { marginBottom: theme.spacing.xl },
+  searchLabel: { ...theme.typography.bodySmall, color: theme.colors.textSecondary, marginBottom: theme.spacing.xs },
 });
 
 export default AdjustScreen;

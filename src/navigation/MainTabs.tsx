@@ -1,13 +1,14 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { ClipboardList, Package, Move, SlidersHorizontal, Settings } from 'lucide-react-native';
+import { AlertTriangle, ClipboardList, Package, Move, SlidersHorizontal, Settings } from 'lucide-react-native';
 
 import type { MainTabParamList } from './types';
 import OrdersListScreen from '../screens/Orders/OrdersListScreen';
 import MoveSkuStack from './MoveSkuStack';
 import PickingStack from './PickingStack';
 import AdjustStack from './AdjustStack';
+import HospitalScreen from '../screens/HospitalScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import { theme } from '../theme';
 
@@ -99,6 +100,14 @@ const MainTabs: React.FC = () => {
           title: 'Adjust',
           tabBarIcon: ({ focused }) => tabIcon(SlidersHorizontal, focused),
           headerShown: false,
+        }}
+      />
+      <Tab.Screen
+        name="Hospital"
+        component={HospitalScreen}
+        options={{
+          title: 'Hospital',
+          tabBarIcon: ({ focused }) => tabIcon(AlertTriangle, focused),
         }}
       />
       <Tab.Screen

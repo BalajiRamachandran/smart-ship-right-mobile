@@ -1282,6 +1282,14 @@ const PickingScreen: React.FC<Props> = ({ navigation, route }) => {
           <Text style={styles.skippedBannerSubtitle}>
             {skippedItems.length} item(s) not in pick list (hospital or no location). Resolve in warehouse dashboard.
           </Text>
+          <TouchableOpacity
+            style={styles.skippedResolveButton}
+            onPress={() => navigation.navigate('Hospital' as any)}
+            activeOpacity={0.9}
+          >
+            <AlertTriangle size={16} color="#fff" strokeWidth={2} />
+            <Text style={styles.skippedResolveButtonText}>Resolve in Hospital</Text>
+          </TouchableOpacity>
           {(() => {
             const unique = Array.from(new Map(skippedItems.map((s) => [s.sku_id, s])).values());
             return unique.slice(0, 5).map((s) => (
@@ -2713,6 +2721,23 @@ const styles = StyleSheet.create({
     color: theme.colors.textSecondary,
     marginBottom: theme.spacing.sm,
     lineHeight: 18,
+  },
+  skippedResolveButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.sm,
+    backgroundColor: theme.colors.primary,
+    borderColor: theme.colors.primary,
+    borderWidth: 1,
+    borderRadius: theme.radius.lg,
+    paddingVertical: theme.spacing.sm,
+    paddingHorizontal: theme.spacing.lg,
+    marginBottom: theme.spacing.md,
+  },
+  skippedResolveButtonText: {
+    ...theme.typography.label,
+    color: '#fff',
+    fontWeight: '800',
   },
   skippedRow: {
     flexDirection: 'row',

@@ -1,6 +1,6 @@
 {
   "name": "smart-ship-right-mobile",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "main": "index.ts",
   "scripts": {
     "start": "expo start",

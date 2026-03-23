@@ -29,6 +29,7 @@ import { formatApiError } from '../utils/formatApiError';
 import { theme } from '../theme';
 import { isScreenDebugEnabled } from '../config/debug';
 import { useMoveSkuPersistStore } from '../store/moveSkuPersistStore';
+import SkuSearchDropdown, { type SkuSearchResult } from '../components/SkuSearchDropdown';
 
 type Props = NativeStackScreenProps<MoveSkuStackParamList, 'MoveSkuRoot'>;
 
@@ -214,6 +215,22 @@ const MoveSkuScreen: React.FC<Props> = ({ navigation, route }) => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSkuSelectFromSearch = (selected: SkuSearchResult) => {
+    setError(null);
+    setSku({
+      id: selected.id,
+      sku_code: selected.sku_code,
+      name: selected.name,
+      primary_image_url: selected.primary_image_url ?? null,
+    });
+    // Reset downstream steps for a clean flow
+    setSourceLocation('');
+    setDestinationLocation('');
+    setAvailableQty(0);
+    setQuantity('1');
+    setStep('source');
   };
 
   const handleSourceScan = async (locationBarcode: string) => {
@@ -521,6 +538,13 @@ const MoveSkuScreen: React.FC<Props> = ({ navigation, route }) => {
       <View style={styles.card}>
         {step === 'sku' ? (
           <>
+            <Text style={styles.searchLabel}>Search SKU</Text>
+            <SkuSearchDropdown
+              minChars={2}
+              limit={8}
+              onSelect={(skuItem) => handleSkuSelectFromSearch(skuItem)}
+            />
+            <Text style={styles.searchOr}>or</Text>
             <TouchableOpacity style={styles.primaryScanButton} onPress={() => scan('sku', 'SKU')} activeOpacity={0.9}>
               <ScanBarcode size={32} color="#fff" strokeWidth={2} />
               <Text style={styles.primaryScanText}>Scan SKU</Text>
@@ -840,6 +864,17 @@ const styles = StyleSheet.create({
     marginTop: 4,
     fontSize: 13,
     color: 'rgba(255,255,255,0.9)',
+  },
+  searchLabel: {
+    ...theme.typography.bodySmall,
+    color: theme.colors.textSecondary,
+    marginBottom: theme.spacing.xs,
+  },
+  searchOr: {
+    ...theme.typography.caption,
+    color: theme.colors.textMuted,
+    textAlign: 'center',
+    marginVertical: theme.spacing.xs,
   },
   skuChip: {
     flexDirection: 'row',
