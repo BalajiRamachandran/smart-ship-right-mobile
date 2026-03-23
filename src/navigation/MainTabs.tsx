@@ -2,6 +2,7 @@ import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { AlertTriangle, ClipboardList, Package, Move, SlidersHorizontal, Settings } from 'lucide-react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { MainTabParamList } from './types';
 import OrdersListScreen from '../screens/Orders/OrdersListScreen';
@@ -42,6 +43,7 @@ const tabIcon = (Icon: React.ComponentType<{ size: number; color: string }>, foc
 const SHOW_ORDERS_TAB = process.env.EXPO_PUBLIC_SHOW_ORDERS_TAB === 'true';
 
 const MainTabs: React.FC = () => {
+  const insets = useSafeAreaInsets();
   const initialRoute = SHOW_ORDERS_TAB ? 'Orders' : 'MoveSku';
 
   return (
@@ -55,10 +57,12 @@ const MainTabs: React.FC = () => {
         tabBarStyle: {
           backgroundColor: 'transparent',
           borderTopWidth: 0,
-          paddingTop: 6,
-          height: 58,
-          overflow: 'hidden',
+          paddingTop: 8,
+          // Keep tab bar clearly above Android system nav area.
+          paddingBottom: Math.max(insets.bottom, 12),
+          height: 60 + Math.max(insets.bottom, 12),
         },
+        tabBarHideOnKeyboard: false,
         tabBarLabelStyle: { fontSize: 11, fontWeight: '600' },
         headerStyle: { backgroundColor: theme.colors.background },
         headerTintColor: theme.colors.text,

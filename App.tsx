@@ -4,6 +4,7 @@ import { useColorScheme, View } from 'react-native';
 import { NavigationContainer, DarkTheme, DefaultTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import * as ScreenOrientation from 'expo-screen-orientation';
 import { vexo } from 'vexo-analytics';
 
 import AnimatedSplash from './src/components/AnimatedSplash';
@@ -73,6 +74,11 @@ function RootNavigator() {
 
 export default function App() {
   const colorScheme = useColorScheme();
+
+  useEffect(() => {
+    // Enforce portrait to avoid layout issues when rotating devices.
+    void ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP).catch(() => {});
+  }, []);
 
   return (
     <SafeAreaProvider>
