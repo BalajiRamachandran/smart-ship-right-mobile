@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
+  Modal,
   Platform,
   StyleSheet,
   Text,
@@ -9,6 +10,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { Settings as SettingsIcon } from 'lucide-react-native';
 import { useAuthStore } from '../store/authStore';
 import { useLayout } from '../hooks/useLayout';
 import { GlassView } from '../components/GlassView';
@@ -20,11 +22,13 @@ const LoginScreen: React.FC = () => {
   const { contentWidth, horizontalPadding } = useLayout();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [showBackendSettings, setShowBackendSettings] = useState(false);
 
   const login = useAuthStore((state) => state.login);
   const loading = useAuthStore((state) => state.loading);
   const error = useAuthStore((state) => state.error);
   const clearApiUrl = useApiUrlStore((s) => s.clearApiUrl);
+  const effectiveApiUrl = useApiUrlStore((s) => s.getEffectiveUrl());
 
   const handleSubmit = () => {
     if (!username || !password || loading) return;
@@ -37,6 +41,14 @@ const LoginScreen: React.FC = () => {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <GlassView style={[styles.card, { maxWidth: contentWidth, marginHorizontal: horizontalPadding }]}>
+        <TouchableOpacity
+          style={styles.settingsIconButton}
+          activeOpacity={0.8}
+          onPress={() => setShowBackendSettings(true)}
+        >
+          <SettingsIcon size={20} color={theme.colors.textSecondary} strokeWidth={2} />
+        </TouchableOpacity>
+
         <View style={styles.brand}>
           <ShipRightLogo />
           <Text style={styles.subtitle}>Warehouse Management</Text>
@@ -95,18 +107,57 @@ const LoginScreen: React.FC = () => {
         <TouchableOpacity
           style={styles.secondaryButton}
           onPress={() => {
-            // Keep it simple: clear saved API URL so the user can re-enter it.
+            // Clear the saved URL so RootNavigator shows API setup again.
             void clearApiUrl();
           }}
           activeOpacity={0.85}
         >
-          <Text style={styles.secondaryButtonText}>Backend Settings</Text>
+          <Text style={styles.secondaryButtonText}>Clear Backend URL</Text>
         </TouchableOpacity>
 
         <Text style={styles.hint}>
           Use your existing Ship-Right credentials
         </Text>
       </GlassView>
+
+      <Modal
+        visible={showBackendSettings}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowBackendSettings(false)}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setShowBackendSettings(false)}
+        >
+          <TouchableOpacity activeOpacity={1} onPress={() => {}} style={styles.modalCard}>
+            <Text style={styles.modalTitle}>Backend Settings</Text>
+            <Text style={styles.modalLabel}>Current API base URL</Text>
+            <Text style={styles.modalUrl} numberOfLines={4}>
+              {effectiveApiUrl}
+            </Text>
+
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                style={styles.modalSecondaryButton}
+                onPress={() => {
+                  void clearApiUrl();
+                  setShowBackendSettings(false);
+                }}
+              >
+                <Text style={styles.modalSecondaryButtonText}>Clear & Re-enter</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.modalPrimaryButton}
+                onPress={() => setShowBackendSettings(false)}
+              >
+                <Text style={styles.modalPrimaryButtonText}>Close</Text>
+              </TouchableOpacity>
+            </View>
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal>
     </KeyboardAvoidingView>
   );
 };
@@ -123,6 +174,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: theme.spacing.xxl,
     paddingVertical: theme.spacing.xxl + theme.spacing.md,
     ...theme.shadow.card,
+    position: 'relative',
   },
   brand: {
     marginBottom: theme.spacing.xxl,
@@ -194,11 +246,94 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '700',
   },
+  settingsIconButton: {
+    position: 'absolute',
+    top: 16,
+    right: 16,
+    width: 40,
+    height: 40,
+    borderRadius: 999,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: theme.colors.backgroundElevated,
+    borderWidth: 1,
+    borderColor: theme.colors.borderStrong,
+  },
   hint: {
     marginTop: theme.spacing.lg,
     ...theme.typography.caption,
     color: theme.colors.textMuted,
     textAlign: 'center',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 20,
+  },
+  modalCard: {
+    width: '100%',
+    maxWidth: 520,
+    borderRadius: theme.radius.md,
+    padding: theme.spacing.md,
+    backgroundColor: theme.colors.background,
+    borderWidth: 1,
+    borderColor: theme.colors.borderStrong,
+  },
+  modalTitle: {
+    marginBottom: theme.spacing.sm,
+    textAlign: 'center',
+    ...theme.typography.title,
+    fontSize: 20,
+    color: theme.colors.text,
+  },
+  modalLabel: {
+    ...theme.typography.label,
+    color: theme.colors.textSecondary,
+    marginBottom: theme.spacing.xs,
+  },
+  modalUrl: {
+    ...theme.typography.bodySmall,
+    color: theme.colors.text,
+    backgroundColor: theme.colors.backgroundElevated,
+    borderWidth: 1,
+    borderColor: theme.colors.borderStrong,
+    borderRadius: theme.radius.sm,
+    padding: theme.spacing.sm,
+    marginBottom: theme.spacing.md,
+  },
+  modalActions: {
+    flexDirection: 'row',
+    gap: theme.spacing.sm,
+  },
+  modalSecondaryButton: {
+    flex: 1,
+    height: 44,
+    borderRadius: theme.radius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: theme.colors.backgroundElevated,
+    borderWidth: 1.5,
+    borderColor: theme.colors.borderStrong,
+  },
+  modalSecondaryButtonText: {
+    color: theme.colors.text,
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  modalPrimaryButton: {
+    flex: 1,
+    height: 44,
+    borderRadius: theme.radius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: theme.colors.primary,
+  },
+  modalPrimaryButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '700',
   },
 });
 
