@@ -4,13 +4,14 @@ import { useColorScheme, View } from 'react-native';
 import { NavigationContainer, DarkTheme, DefaultTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import * as ScreenOrientation from 'expo-screen-orientation';
 import { vexo } from 'vexo-analytics';
 
 import AnimatedSplash from './src/components/AnimatedSplash';
 import { useApiUrlStore } from './src/store/apiUrlStore';
 import { useAuthStore } from './src/store/authStore';
 import { useDebugStore } from './src/store/debugStore';
+import { rootNavigationRef } from './src/navigation/rootNavigationRef';
+import { useTabletOrientation } from './src/hooks/useTabletOrientation';
 import { RootStackParamList } from './src/navigation/types';
 import ApiSetupScreen from './src/screens/ApiSetupScreen';
 import LoginScreen from './src/screens/LoginScreen';
@@ -23,6 +24,11 @@ if (VEXO_PROJECT_ID) {
 }
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
+
+function TabletOrientationSync() {
+  useTabletOrientation();
+  return null;
+}
 
 function RootNavigator() {
   const apiUrlHydrated = useApiUrlStore((s) => s.hydrated);
@@ -75,15 +81,11 @@ function RootNavigator() {
 export default function App() {
   const colorScheme = useColorScheme();
 
-  useEffect(() => {
-    // Enforce portrait to avoid layout issues when rotating devices.
-    void ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP).catch(() => {});
-  }, []);
-
   return (
     <SafeAreaProvider>
-      <NavigationContainer theme={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+      <NavigationContainer ref={rootNavigationRef} theme={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
         <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
+        <TabletOrientationSync />
         <View style={{ flex: 1 }}>
           <RootNavigator />
           <DebugToast />

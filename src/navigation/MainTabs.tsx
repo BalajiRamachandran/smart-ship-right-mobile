@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { AlertTriangle, ClipboardList, Package, Move, SlidersHorizontal, Settings } from 'lucide-react-native';
@@ -11,6 +11,7 @@ import PickingStack from './PickingStack';
 import AdjustStack from './AdjustStack';
 import HospitalScreen from '../screens/HospitalScreen';
 import SettingsScreen from '../screens/SettingsScreen';
+import FeedbackFab from '../components/FeedbackFab';
 import { theme } from '../theme';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
@@ -45,8 +46,10 @@ const SHOW_ORDERS_TAB = process.env.EXPO_PUBLIC_SHOW_ORDERS_TAB === 'true';
 const MainTabs: React.FC = () => {
   const insets = useSafeAreaInsets();
   const initialRoute = SHOW_ORDERS_TAB ? 'Orders' : 'MoveSku';
+  const captureRootRef = useRef<View>(null);
 
   return (
+    <View style={{ flex: 1 }} ref={captureRootRef} collapsable={false}>
     <Tab.Navigator
       initialRouteName={initialRoute}
       screenOptions={{
@@ -123,6 +126,8 @@ const MainTabs: React.FC = () => {
         }}
       />
     </Tab.Navigator>
+    <FeedbackFab shotRef={captureRootRef} />
+    </View>
   );
 };
 

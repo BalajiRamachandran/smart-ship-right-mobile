@@ -15,6 +15,9 @@ import { AlertTriangle, CheckCircle, ClipboardList, XCircle } from 'lucide-react
 import { api } from '../api/client';
 import { theme } from '../theme';
 import { formatApiError } from '../utils/formatApiError';
+import { useLayout } from '../hooks/useLayout';
+import { isLikelyConnectivityError } from '../utils/networkError';
+import ConnectivityBanner from '../components/ConnectivityBanner';
 
 type HospitalItem = {
   sku_id: string;
@@ -39,6 +42,7 @@ const severityColor = (severity?: string | null) => {
 };
 
 const HospitalScreen: React.FC = () => {
+  const layout = useLayout();
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -50,6 +54,7 @@ const HospitalScreen: React.FC = () => {
   const [resolveNotes, setResolveNotes] = useState('');
   const [activeSku, setActiveSku] = useState<HospitalItem | null>(null);
   const [resolving, setResolving] = useState(false);
+  const [showConnectivityRetry, setShowConnectivityRetry] = useState(false);
 
   const fetchList = useCallback(async (q?: string) => {
     setLoading(true);
@@ -65,7 +70,9 @@ const HospitalScreen: React.FC = () => {
       });
       const list: HospitalItem[] = Array.isArray(res.data?.items) ? res.data.items : [];
       setItems(list);
+      setShowConnectivityRetry(false);
     } catch (e: any) {
+      setShowConnectivityRetry(isLikelyConnectivityError(e));
       const formatted = formatApiError(e);
       setError(formatted.message);
       setItems([]);
@@ -131,7 +138,12 @@ const HospitalScreen: React.FC = () => {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+    <View style={{ flex: 1, backgroundColor: theme.colors.background, alignItems: layout.isTablet ? 'center' : 'stretch' }}>
+    <ScrollView
+      style={[styles.container, layout.isTablet ? { maxWidth: layout.maxContentWidth, width: '100%' } : null]}
+      contentContainerStyle={[styles.content, { paddingHorizontal: layout.horizontalPadding }]}
+      keyboardShouldPersistTaps="handled"
+    >
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <AlertTriangle size={20} color={theme.colors.warning} strokeWidth={2} />
@@ -139,6 +151,8 @@ const HospitalScreen: React.FC = () => {
         </View>
         <Text style={styles.subtitle}>Quarantined SKUs that need resolution</Text>
       </View>
+
+      <ConnectivityBanner visible={showConnectivityRetry} onRetry={() => void fetchList(search)} />
 
       <View style={styles.searchWrap}>
         <TextInput
@@ -301,6 +315,7 @@ const HospitalScreen: React.FC = () => {
         </TouchableOpacity>
       </Modal>
     </ScrollView>
+    </View>
   );
 };
 

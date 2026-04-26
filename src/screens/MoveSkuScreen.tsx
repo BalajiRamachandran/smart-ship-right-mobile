@@ -30,6 +30,7 @@ import { theme } from '../theme';
 import { isScreenDebugEnabled } from '../config/debug';
 import { useMoveSkuPersistStore } from '../store/moveSkuPersistStore';
 import SkuSearchDropdown, { type SkuSearchResult } from '../components/SkuSearchDropdown';
+import { useLayout } from '../hooks/useLayout';
 
 type Props = NativeStackScreenProps<MoveSkuStackParamList, 'MoveSkuRoot'>;
 
@@ -84,6 +85,7 @@ function safeStringify(obj: unknown, maxLen = 400): string {
 }
 
 const MoveSkuScreen: React.FC<Props> = ({ navigation, route }) => {
+  const layout = useLayout();
   const debugEnabled = useDebugStore((s) => s.enabled);
   const screenDebug = isScreenDebugEnabled();
   const persist = useMoveSkuPersistStore.getState();
@@ -433,9 +435,10 @@ const MoveSkuScreen: React.FC<Props> = ({ navigation, route }) => {
   // ——— Success / confirmation screen after move ———
   if (step === 'success' && lastMoveSummary) {
     return (
+      <View style={{ flex: 1, backgroundColor: theme.colors.background, alignItems: layout.isTablet ? 'center' : 'stretch' }}>
       <ScrollView
-        style={styles.container}
-        contentContainerStyle={[styles.content, styles.successContent]}
+        style={[styles.container, layout.isTablet ? { maxWidth: layout.maxContentWidth, width: '100%' } : null]}
+        contentContainerStyle={[styles.content, styles.successContent, { paddingHorizontal: layout.horizontalPadding }]}
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.successCard}>
@@ -494,6 +497,7 @@ const MoveSkuScreen: React.FC<Props> = ({ navigation, route }) => {
           </TouchableOpacity>
         </View>
       </ScrollView>
+      </View>
     );
   }
 
@@ -502,9 +506,10 @@ const MoveSkuScreen: React.FC<Props> = ({ navigation, route }) => {
   const stepLabel = step === 'sku' ? 'Scan SKU' : step === 'source' ? 'Scan source' : step === 'destination' ? 'Scan destination' : 'Set quantity';
 
   return (
+    <View style={{ flex: 1, backgroundColor: theme.colors.background, alignItems: layout.isTablet ? 'center' : 'stretch' }}>
     <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.content}
+      style={[styles.container, layout.isTablet ? { maxWidth: layout.maxContentWidth, width: '100%' } : null]}
+      contentContainerStyle={[styles.content, { paddingHorizontal: layout.horizontalPadding }]}
       keyboardShouldPersistTaps="handled"
     >
       <View style={styles.header}>
@@ -712,6 +717,7 @@ const MoveSkuScreen: React.FC<Props> = ({ navigation, route }) => {
         </View>
       ) : null}
     </ScrollView>
+    </View>
   );
 };
 
