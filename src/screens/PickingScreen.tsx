@@ -16,14 +16,18 @@ import {
 import type { CompositeScreenProps } from '@react-navigation/native';
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { AlertTriangle, CheckCircle, Clock, Package, PlayCircle, PlusCircle, ScanBarcode } from 'lucide-react-native';
+import { Activity, AlertTriangle, CheckCircle, Clock, MapPin, Package, PlayCircle, PlusCircle, ScanBarcode } from 'lucide-react-native';
 import type { MainTabParamList, PickingStackParamList } from '../navigation/types';
 import { api } from '../api/client';
 import ShipRightLogo from '../components/ShipRightLogo';
 import { useAuthStore } from '../store/authStore';
 import { useDebugStore } from '../store/debugStore';
 import { formatApiError } from '../utils/formatApiError';
+import { isLikelyConnectivityError } from '../utils/networkError';
+import ConnectivityBanner from '../components/ConnectivityBanner';
 import { theme } from '../theme';
+import { useLayout } from '../hooks/useLayout';
+import { PickingHospitalModals } from '../components/picking/PickingHospitalModals';
 
 type Props = CompositeScreenProps<
   BottomTabScreenProps<MainTabParamList, 'Picking'>,
@@ -96,6 +100,7 @@ const CATEGORY_LABELS: Record<string, string> = {
 type PickingMode = 'start' | 'create' | 'picking';
 
 const PickingScreen: React.FC<Props> = ({ navigation, route }) => {
+  const layout = useLayout();
   const user = useAuthStore((s) => s.user);
   const debugEnabled = useDebugStore((s) => s.enabled);
 
@@ -126,6 +131,10 @@ const PickingScreen: React.FC<Props> = ({ navigation, route }) => {
   // Completion celebration (after batch complete)
   const [showCompletionScreen, setShowCompletionScreen] = useState(false);
 
+  const [itemHospitalOpen, setItemHospitalOpen] = useState(false);
+  const [locationHospitalOpen, setLocationHospitalOpen] = useState(false);
+  const [showConnectivityRetry, setShowConnectivityRetry] = useState(false);
+
   const canPick = useMemo(() => user?.id && batchId.trim().length > 0, [user?.id, batchId]);
 
   const categories = useMemo(() => (availableData ? Object.keys(availableData) : []), [availableData]);
@@ -151,8 +160,10 @@ const PickingScreen: React.FC<Props> = ({ navigation, route }) => {
       } else {
         setAvailableData(null);
       }
+      setShowConnectivityRetry(false);
     } catch (e) {
       console.error(e);
+      setShowConnectivityRetry(isLikelyConnectivityError(e));
       const formatted = formatApiError(e);
       setError(debugEnabled ? `${formatted.message} (${formatted.title})` : 'Failed to load available orders.');
       setAvailableData(null);
@@ -170,7 +181,9 @@ const PickingScreen: React.FC<Props> = ({ navigation, route }) => {
       });
       const list = res.data?.items ?? [];
       setBatches(Array.isArray(list) ? list : []);
-    } catch {
+      setShowConnectivityRetry(false);
+    } catch (e) {
+      setShowConnectivityRetry(isLikelyConnectivityError(e));
       setBatches([]);
     } finally {
       setBatchesLoading(false);
@@ -283,11 +296,13 @@ const PickingScreen: React.FC<Props> = ({ navigation, route }) => {
         setTote(null);
         setToteBarcode('');
         void loadPickListForBatch(id);
+        setShowConnectivityRetry(false);
       } else {
         setError('No batch ID in response.');
       }
     } catch (e: any) {
       console.error(e);
+      setShowConnectivityRetry(isLikelyConnectivityError(e));
       const formatted = formatApiError(e);
       setError(debugEnabled ? `${formatted.message} (${formatted.title})` : formatted.message);
     } finally {
@@ -304,7 +319,9 @@ const PickingScreen: React.FC<Props> = ({ navigation, route }) => {
       const list = Array.isArray(data) ? data : data?.pick_list;
       setPickList(Array.isArray(list) ? list : []);
       setSkippedItems(Array.isArray(data?.skipped_items) ? data.skipped_items : []);
-    } catch {
+      setShowConnectivityRetry(false);
+    } catch (e) {
+      setShowConnectivityRetry(isLikelyConnectivityError(e));
       setPickList([]);
       setSkippedItems([]);
     }
@@ -370,14 +387,29 @@ const PickingScreen: React.FC<Props> = ({ navigation, route }) => {
       const list = Array.isArray(data) ? data : data?.pick_list;
       setPickList(Array.isArray(list) ? list : []);
       setSkippedItems(Array.isArray(data?.skipped_items) ? data.skipped_items : []);
+      setShowConnectivityRetry(false);
     } catch (e) {
       console.error(e);
+      setShowConnectivityRetry(isLikelyConnectivityError(e));
       const formatted = formatApiError(e);
       setError(debugEnabled ? `${formatted.message} (${formatted.title})` : 'Unable to load pick list.');
       setPickList([]);
       setSkippedItems([]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const retryConnectivityLoads = () => {
+    setShowConnectivityRetry(false);
+    setError(null);
+    if (mode === 'start') {
+      void loadBatches(true);
+      void loadDashboardStats();
+    } else if (mode === 'create') {
+      void loadAvailableOrders();
+    } else if (mode === 'picking') {
+      void loadPickList();
     }
   };
 
@@ -581,10 +613,12 @@ const PickingScreen: React.FC<Props> = ({ navigation, route }) => {
         setTote(null);
         setToteBarcode('');
         void loadPickListForBatch(id);
+        setShowConnectivityRetry(false);
       } else {
         setError('Could not create batch. Try custom batch.');
       }
     } catch (e: any) {
+      setShowConnectivityRetry(isLikelyConnectivityError(e));
       const formatted = formatApiError(e);
       setError(formatted.message);
     } finally {
@@ -628,8 +662,15 @@ const PickingScreen: React.FC<Props> = ({ navigation, route }) => {
   if (mode === 'start') {
     const displayName = user?.full_name || user?.username || 'Picker';
     return (
+      <View
+        style={[
+          styles.container,
+          layout.isTablet && { alignItems: 'center' as const },
+          { paddingHorizontal: layout.horizontalPadding },
+        ]}
+      >
       <ScrollView
-        style={styles.container}
+        style={{ flex: 1, width: '100%', maxWidth: layout.isTablet ? layout.maxContentWidth : undefined }}
         contentContainerStyle={styles.startContent}
         showsVerticalScrollIndicator={false}
         refreshControl={
@@ -643,6 +684,7 @@ const PickingScreen: React.FC<Props> = ({ navigation, route }) => {
           />
         }
       >
+        <ConnectivityBanner visible={showConnectivityRetry} onRetry={retryConnectivityLoads} />
         <View style={styles.startLogoWrap}>
           <ShipRightLogo width={200} height={44} />
         </View>
@@ -812,16 +854,29 @@ const PickingScreen: React.FC<Props> = ({ navigation, route }) => {
         {error ? <View style={styles.errorBanner}><Text style={styles.errorText}>{error}</Text></View> : null}
         {loading ? <View style={styles.loadingRow}><ActivityIndicator size="small" color={theme.colors.primary} /><Text style={styles.loadingText}>Creating batch…</Text></View> : null}
       </ScrollView>
+      </View>
     );
   }
 
   // ——— Create batch flow: category → batch type → order count ———
   if (mode === 'create') {
     return (
-      <ScrollView style={styles.container} contentContainerStyle={styles.createContent} showsVerticalScrollIndicator={false}>
+      <View
+        style={[
+          styles.container,
+          layout.isTablet && { alignItems: 'center' as const },
+          { paddingHorizontal: layout.horizontalPadding },
+        ]}
+      >
+      <ScrollView
+        style={{ flex: 1, width: '100%', maxWidth: layout.isTablet ? layout.maxContentWidth : undefined }}
+        contentContainerStyle={styles.createContent}
+        showsVerticalScrollIndicator={false}
+      >
         <TouchableOpacity style={styles.createBackLink} onPress={() => setMode('start')} activeOpacity={0.8}>
           <Text style={styles.createBackLinkText}>← Back to picking</Text>
         </TouchableOpacity>
+        <ConnectivityBanner visible={showConnectivityRetry} onRetry={retryConnectivityLoads} />
         <View style={styles.createHero}>
           <Text style={styles.createTitle}>Create batch</Text>
           <Text style={styles.createSubtitle}>Choose category, type, and how many orders to pick</Text>
@@ -1009,6 +1064,7 @@ const PickingScreen: React.FC<Props> = ({ navigation, route }) => {
           </View>
         )}
       </ScrollView>
+      </View>
     );
   }
 
@@ -1041,7 +1097,9 @@ const PickingScreen: React.FC<Props> = ({ navigation, route }) => {
   const workflowStep = needsTote ? 1 : allPicked ? 3 : 2; // 1 Tote, 2 Picking, 3 Complete
 
   return (
-    <View style={styles.container}>
+    <View style={{ flex: 1, backgroundColor: theme.colors.background, alignItems: layout.isTablet ? 'center' : 'stretch' }}>
+    <View style={[styles.container, { maxWidth: layout.isTablet ? layout.maxContentWidth : undefined, width: '100%', paddingHorizontal: layout.horizontalPadding }]}>
+      <ConnectivityBanner visible={showConnectivityRetry} onRetry={retryConnectivityLoads} />
       <View style={styles.pickingTopRow}>
         <TouchableOpacity style={styles.startNewLink} onPress={startNewBatch}>
           <Text style={styles.startNewLinkText}>← New batch</Text>
@@ -1199,6 +1257,26 @@ const PickingScreen: React.FC<Props> = ({ navigation, route }) => {
               <Text style={styles.skipOrderButtonText}>Report issue / Skip order</Text>
             </TouchableOpacity>
           ) : null}
+          <View style={styles.hospitalActionsRow}>
+            <TouchableOpacity
+              style={[styles.hospitalActionBtn, !currentItem.location_id && styles.hospitalActionBtnDisabled]}
+              onPress={() => setItemHospitalOpen(true)}
+              disabled={!currentItem.location_id || loading}
+              activeOpacity={0.85}
+            >
+              <Activity size={18} color={currentItem.location_id ? theme.colors.error : theme.colors.textMuted} strokeWidth={2} />
+              <Text style={styles.hospitalActionText}>Item issue</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.hospitalActionBtn, !currentItem.location_id && styles.hospitalActionBtnDisabled]}
+              onPress={() => setLocationHospitalOpen(true)}
+              disabled={!currentItem.location_id || loading}
+              activeOpacity={0.85}
+            >
+              <MapPin size={18} color={currentItem.location_id ? theme.colors.warning : theme.colors.textMuted} strokeWidth={2} />
+              <Text style={styles.hospitalActionText}>Flag location</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       )}
 
@@ -1363,6 +1441,16 @@ const PickingScreen: React.FC<Props> = ({ navigation, route }) => {
       >
         <Text style={styles.completeText}>Complete batch</Text>
       </TouchableOpacity>
+
+      <PickingHospitalModals
+        itemModalVisible={itemHospitalOpen}
+        locationModalVisible={locationHospitalOpen}
+        currentItem={currentItem}
+        onCloseItem={() => setItemHospitalOpen(false)}
+        onCloseLocation={() => setLocationHospitalOpen(false)}
+        onReported={() => void loadPickList()}
+      />
+    </View>
     </View>
   );
 };
@@ -2421,6 +2509,32 @@ const styles = StyleSheet.create({
     ...theme.typography.caption,
     fontWeight: '600',
     color: theme.colors.warning,
+  },
+  hospitalActionsRow: {
+    flexDirection: 'row',
+    gap: theme.spacing.sm,
+    marginTop: theme.spacing.md,
+  },
+  hospitalActionBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: theme.spacing.md,
+    paddingHorizontal: theme.spacing.sm,
+    borderRadius: theme.radius.md,
+    borderWidth: 1,
+    borderColor: theme.colors.borderStrong,
+    backgroundColor: theme.colors.surface,
+  },
+  hospitalActionBtnDisabled: {
+    opacity: 0.45,
+  },
+  hospitalActionText: {
+    ...theme.typography.caption,
+    fontWeight: '700',
+    color: theme.colors.text,
   },
   primaryCtaSection: {
     marginBottom: theme.spacing.lg,

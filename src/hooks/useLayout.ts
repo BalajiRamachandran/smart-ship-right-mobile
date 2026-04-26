@@ -9,7 +9,12 @@ const TABLET_BREAKPOINT = 768;
 export function useLayout() {
   const { width, height } = useWindowDimensions();
   const isTablet = useMemo(() => width >= TABLET_BREAKPOINT, [width]);
-  const contentWidth = useMemo(() => (isTablet ? Math.min(560, width * 0.6) : width), [width, isTablet]);
   const horizontalPadding = useMemo(() => (isTablet ? 32 : 16), [isTablet]);
-  return { width, height, isTablet, contentWidth, horizontalPadding };
+  const contentWidth = useMemo(() => (isTablet ? Math.min(560, width * 0.6) : width), [width, isTablet]);
+  /** Max width for primary flows (picking, adjust, hospital) on tablet — centered column. */
+  const maxContentWidth = useMemo(() => {
+    if (!isTablet) return width;
+    return Math.min(820, width - horizontalPadding * 2);
+  }, [isTablet, width, horizontalPadding]);
+  return { width, height, isTablet, contentWidth, horizontalPadding, maxContentWidth };
 }

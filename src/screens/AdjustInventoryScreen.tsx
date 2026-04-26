@@ -17,6 +17,7 @@ import { api } from '../api/client';
 import type { AdjustStackParamList } from '../navigation/types';
 import { formatApiError } from '../utils/formatApiError';
 import { theme } from '../theme';
+import { useLayout } from '../hooks/useLayout';
 
 type Props = NativeStackScreenProps<AdjustStackParamList, 'AdjustInventory'>;
 
@@ -36,6 +37,7 @@ type LocationsResponse = {
 };
 
 const AdjustInventoryScreen: React.FC<Props> = ({ navigation, route }) => {
+  const layout = useLayout();
   const { skuId } = route.params;
   const [sku, setSku] = useState<SkuInfo | null>(null);
   const [currentQuantity, setCurrentQuantity] = useState(0);
@@ -145,20 +147,24 @@ const AdjustInventoryScreen: React.FC<Props> = ({ navigation, route }) => {
 
   if (loading) {
     return (
-      <View style={styles.centered}>
-        <ActivityIndicator size="large" color={theme.colors.primary} />
-        <Text style={styles.loadingText}>Loading SKU…</Text>
+      <View style={{ flex: 1, backgroundColor: theme.colors.background, alignItems: layout.isTablet ? 'center' : 'stretch' }}>
+        <View style={[styles.centered, layout.isTablet && { maxWidth: layout.maxContentWidth, width: '100%' }]}>
+          <ActivityIndicator size="large" color={theme.colors.primary} />
+          <Text style={styles.loadingText}>Loading SKU…</Text>
+        </View>
       </View>
     );
   }
 
   if (error && !sku) {
     return (
-      <View style={styles.centered}>
-        <Text style={styles.errorText}>{error}</Text>
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.navigate('AdjustRoot')}>
-          <Text style={styles.backButtonText}>Back to Scan</Text>
-        </TouchableOpacity>
+      <View style={{ flex: 1, backgroundColor: theme.colors.background, alignItems: layout.isTablet ? 'center' : 'stretch' }}>
+        <View style={[styles.centered, layout.isTablet && { maxWidth: layout.maxContentWidth, width: '100%', paddingHorizontal: layout.horizontalPadding }]}>
+          <Text style={styles.errorText}>{error}</Text>
+          <TouchableOpacity style={styles.backButton} onPress={() => navigation.navigate('AdjustRoot')}>
+            <Text style={styles.backButtonText}>Back to Scan</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     );
   }
@@ -172,7 +178,12 @@ const AdjustInventoryScreen: React.FC<Props> = ({ navigation, route }) => {
           ? ' Shopify sync failed.'
           : '';
     return (
-      <ScrollView style={styles.container} contentContainerStyle={styles.successContent} keyboardShouldPersistTaps="handled">
+      <View style={{ flex: 1, backgroundColor: theme.colors.background, alignItems: layout.isTablet ? 'center' : 'stretch' }}>
+      <ScrollView
+        style={[styles.container, layout.isTablet ? { maxWidth: layout.maxContentWidth, width: '100%' } : null]}
+        contentContainerStyle={[styles.successContent, { paddingHorizontal: layout.horizontalPadding }]}
+        keyboardShouldPersistTaps="handled"
+      >
         <View style={styles.successCard}>
           {sku.primary_image_url ? (
             <Image source={{ uri: sku.primary_image_url }} style={styles.successSkuImage} resizeMode="cover" />
@@ -190,14 +201,24 @@ const AdjustInventoryScreen: React.FC<Props> = ({ navigation, route }) => {
           </TouchableOpacity>
         </View>
       </ScrollView>
+      </View>
     );
   }
 
   if (!sku) return null;
 
   return (
-    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={80}>
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+    <View style={{ flex: 1, backgroundColor: theme.colors.background, alignItems: layout.isTablet ? 'center' : 'stretch' }}>
+    <KeyboardAvoidingView
+      style={[styles.container, layout.isTablet ? { maxWidth: layout.maxContentWidth, width: '100%' } : null]}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      keyboardVerticalOffset={80}
+    >
+      <ScrollView
+        contentContainerStyle={[styles.content, { paddingHorizontal: layout.horizontalPadding }]}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.skuCard}>
           {sku.primary_image_url ? (
             <Image
@@ -288,6 +309,7 @@ const AdjustInventoryScreen: React.FC<Props> = ({ navigation, route }) => {
         </TouchableOpacity>
       </ScrollView>
     </KeyboardAvoidingView>
+    </View>
   );
 };
 

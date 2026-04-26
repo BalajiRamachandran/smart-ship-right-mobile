@@ -22,6 +22,7 @@ export type AdjustStackParamList = {
 /** Params for MoveSku tab stack (inner screens; tab name stays "MoveSku") */
 export type MoveSkuStackParamList = {
   MoveSkuRoot: { scannedField?: string; scannedValue?: string } | undefined;
+  MoveSkuHistory: undefined;
   Scanner: { returnTo: 'MoveSkuRoot'; field: string; title?: string };
 };
 

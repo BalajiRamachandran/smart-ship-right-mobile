@@ -14,10 +14,12 @@ import type { AdjustStackParamList } from '../navigation/types';
 import { formatApiError } from '../utils/formatApiError';
 import { theme } from '../theme';
 import SkuSearchDropdown, { type SkuSearchResult } from '../components/SkuSearchDropdown';
+import { useLayout } from '../hooks/useLayout';
 
 type Props = NativeStackScreenProps<AdjustStackParamList, 'AdjustRoot'>;
 
 const AdjustScreen: React.FC<Props> = ({ navigation, route }) => {
+  const layout = useLayout();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -62,7 +64,12 @@ const AdjustScreen: React.FC<Props> = ({ navigation, route }) => {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+    <View style={{ flex: 1, backgroundColor: theme.colors.background, alignItems: layout.isTablet ? 'center' : 'stretch' }}>
+    <ScrollView
+      style={[styles.container, { maxWidth: layout.isTablet ? layout.maxContentWidth : undefined, width: '100%' }]}
+      contentContainerStyle={[styles.content, { paddingHorizontal: layout.horizontalPadding }]}
+      keyboardShouldPersistTaps="handled"
+    >
       <Text style={styles.title}>Adjust inventory</Text>
       <Text style={styles.subtitle}>Scan a SKU to set its quantity and reason</Text>
 
@@ -89,6 +96,7 @@ const AdjustScreen: React.FC<Props> = ({ navigation, route }) => {
         </View>
       ) : null}
     </ScrollView>
+    </View>
   );
 };
 

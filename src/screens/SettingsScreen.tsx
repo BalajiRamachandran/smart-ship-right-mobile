@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   ScrollView,
@@ -9,13 +9,16 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { Settings, LogOut } from 'lucide-react-native';
+import { MessageSquarePlus, Settings, LogOut } from 'lucide-react-native';
 import { useApiUrlStore } from '../store/apiUrlStore';
 import { useAuthStore } from '../store/authStore';
 import { useDebugStore } from '../store/debugStore';
 import { useLayout } from '../hooks/useLayout';
 import { GlassView } from '../components/GlassView';
 import { theme } from '../theme';
+import { storage } from '../utils/storage';
+
+const FEEDBACK_FAB_HINT_KEY = '@smart_ship_right_feedback_fab_hint_dismissed';
 
 function getInitials(fullName: string | null, username: string): string {
   if (fullName?.trim()) {
@@ -27,7 +30,7 @@ function getInitials(fullName: string | null, username: string): string {
 }
 
 const SettingsScreen: React.FC = () => {
-  const { horizontalPadding } = useLayout();
+  const layout = useLayout();
   const user = useAuthStore((s) => s.user);
   const getEffectiveUrl = useApiUrlStore((s) => s.getEffectiveUrl);
   const setApiUrl = useApiUrlStore((s) => s.setApiUrl);
@@ -39,6 +42,14 @@ const SettingsScreen: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [feedbackHintDismissed, setFeedbackHintDismissed] = useState(true);
+
+  useEffect(() => {
+    void (async () => {
+      const v = await storage.getItem(FEEDBACK_FAB_HINT_KEY);
+      setFeedbackHintDismissed(v === '1');
+    })();
+  }, []);
 
   const handleSave = async () => {
     const trimmed = url.trim();
@@ -63,8 +74,32 @@ const SettingsScreen: React.FC = () => {
     }
   };
 
+  const dismissFeedbackHint = () => {
+    setFeedbackHintDismissed(true);
+    void storage.setItem(FEEDBACK_FAB_HINT_KEY, '1');
+  };
+
   return (
-    <ScrollView style={styles.container} contentContainerStyle={[styles.content, { paddingHorizontal: horizontalPadding }]} keyboardShouldPersistTaps="handled">
+    <View style={{ flex: 1, backgroundColor: theme.colors.background, alignItems: layout.isTablet ? 'center' : 'stretch' }}>
+    <ScrollView
+      style={[styles.container, layout.isTablet ? { maxWidth: layout.maxContentWidth, width: '100%' } : null]}
+      contentContainerStyle={[styles.content, { paddingHorizontal: layout.horizontalPadding }]}
+      keyboardShouldPersistTaps="handled"
+    >
+      {user && !feedbackHintDismissed ? (
+        <GlassView style={[styles.section, styles.sectionFullWidth, styles.feedbackHintSection]}>
+          <View style={styles.sectionHeader}>
+            <MessageSquarePlus size={20} color={theme.colors.primary} strokeWidth={2} />
+            <Text style={styles.sectionTitle}>Send feedback</Text>
+          </View>
+          <Text style={styles.sectionDescription}>
+            Tap the blue round button above the tab bar anytime to report a bug or share an idea. A screen capture is sent with your message when possible.
+          </Text>
+          <TouchableOpacity style={styles.hintDismissButton} onPress={dismissFeedbackHint} activeOpacity={0.85}>
+            <Text style={styles.hintDismissButtonText}>Got it</Text>
+          </TouchableOpacity>
+        </GlassView>
+      ) : null}
       {user && (
         <GlassView style={[styles.section, styles.sectionFullWidth, styles.profileSection]}>
           <View style={styles.profileRow}>
@@ -139,6 +174,7 @@ const SettingsScreen: React.FC = () => {
         </TouchableOpacity>
       </GlassView>
     </ScrollView>
+    </View>
   );
 };
 
@@ -160,6 +196,26 @@ const styles = StyleSheet.create({
   },
   profileSection: {
     marginBottom: theme.spacing.lg,
+  },
+  feedbackHintSection: {
+    marginBottom: theme.spacing.lg,
+    borderWidth: 1,
+    borderColor: theme.colors.primaryDim,
+  },
+  hintDismissButton: {
+    marginTop: theme.spacing.sm,
+    alignSelf: 'flex-start',
+    paddingVertical: theme.spacing.sm,
+    paddingHorizontal: theme.spacing.lg,
+    borderRadius: theme.radius.md,
+    backgroundColor: theme.colors.primaryDim,
+    borderWidth: 1,
+    borderColor: theme.colors.primary,
+  },
+  hintDismissButtonText: {
+    ...theme.typography.label,
+    color: theme.colors.primary,
+    fontWeight: '800',
   },
   profileRow: {
     flexDirection: 'row',

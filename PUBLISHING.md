@@ -154,8 +154,8 @@ eas submit --platform android --profile production
 
 ## 8. Your current config (reference)
 
-- **Bundle ID (iOS):** `com.bramkas.smartshipright`
-- **Package (Android):** `com.bramkas.smartshipright`
+- **Bundle ID (iOS):** `com.smartshipright`
+- **Package (Android):** `com.smartshipright`
 - **EAS project:** linked via `app.json` (`projectId`, `owner`)
 - **Profiles:** `development` (simulator/internal), `preview` (internal), `production` (store builds with auto-increment)
 
