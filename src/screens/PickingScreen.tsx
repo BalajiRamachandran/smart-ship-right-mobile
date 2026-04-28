@@ -59,6 +59,20 @@ type PickListItem = {
   shopify_order_name?: string | null;
 };
 
+/**
+ * True if this line still needs picking. Matches web batch picking: treat `partial` as in-progress
+ * until quantities catch up, and trust server terminal statuses (`picked`, etc.) after refresh.
+ * See ship-right-frontend useBatchPicking (qty confirm → fresh pick list / next pending).
+ */
+function isPickLineRemaining(item: PickListItem): boolean {
+  const req = item.total_quantity_required ?? item.quantity_required ?? 0;
+  const picked = item.quantity_picked ?? 0;
+  if (req <= 0) return false;
+  const st = (item.status || '').toLowerCase();
+  if (st === 'picked' || st === 'skipped' || st === 'cancelled') return false;
+  return picked < req;
+}
+
 type CategoryCounts = { total: number; single_item: number; multi_item: number };
 type AvailableOrdersResponse = { available_orders?: Record<string, CategoryCounts> };
 type CreateDynamicResponse = { batch_id: string; orders_included?: number; message?: string };
@@ -629,21 +643,19 @@ const PickingScreen: React.FC<Props> = ({ navigation, route }) => {
   const totalItems = useMemo(() => pickList.reduce((n, i) => n + (i.total_quantity_required ?? i.quantity_required ?? 0), 0), [pickList]);
   const pickedCount = useMemo(() => pickList.reduce((n, i) => n + (i.quantity_picked ?? 0), 0), [pickList]);
   const remainingCount = useMemo(
-    () => pickList.reduce((n, i) => n + (i.remaining_to_pick ?? Math.max(0, (i.total_quantity_required ?? i.quantity_required ?? 0) - (i.quantity_picked ?? 0))), 0),
+    () =>
+      pickList.reduce((n, i) => {
+        if (!isPickLineRemaining(i)) return n;
+        const req = i.total_quantity_required ?? i.quantity_required ?? 0;
+        const picked = i.quantity_picked ?? 0;
+        return n + (i.remaining_to_pick ?? Math.max(0, req - picked));
+      }, 0),
     [pickList]
   );
   const allPicked = pickList.length > 0 && remainingCount === 0;
 
   // Current item (first remaining) and step position for "Item X of Y"
-  const remainingItems = useMemo(
-    () =>
-      pickList.filter((i) => {
-        const req = i.total_quantity_required ?? i.quantity_required ?? 0;
-        const picked = i.quantity_picked ?? 0;
-        return req > 0 && picked < req;
-      }),
-    [pickList]
-  );
+  const remainingItems = useMemo(() => pickList.filter(isPickLineRemaining), [pickList]);
   const currentItem = remainingItems[0] ?? null;
   const currentStepOfTotal = useMemo(
     () => (remainingItems.length > 0 ? { step: 1, total: remainingItems.length } : { step: 0, total: 0 }),
@@ -1407,7 +1419,7 @@ const PickingScreen: React.FC<Props> = ({ navigation, route }) => {
         renderItem={({ item }) => {
           const req = item.total_quantity_required ?? item.quantity_required ?? 0;
           const picked = item.quantity_picked ?? 0;
-          const done = req > 0 && picked >= req;
+          const done = !isPickLineRemaining(item);
           const isCurrent = currentItem?.batch_item_id === item.batch_item_id;
           return (
             <View style={[styles.pickCard, done && styles.pickCardDone, isCurrent && styles.pickCardCurrent]}>
